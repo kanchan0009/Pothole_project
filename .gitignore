@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database (SQLite)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/dev.db-shm
+backend/prisma/dev.db-wal
+backend/prisma/test.db
+backend/prisma/test.db-journal
+backend/prisma/test.db-shm
+backend/prisma/test.db-wal
+
+# Uploaded files (local fallback storage)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Legacy backup
+_legacy/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

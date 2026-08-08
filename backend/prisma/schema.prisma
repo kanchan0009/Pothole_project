@@ -1,0 +1,188 @@
+// Smart Pothole Detection & Reporting System — Prisma schema
+// Provider: sqlite (dev). Switch to postgresql + Supabase URL for production.
+// The models use only portable types, so the migration is transparent.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  PENDING
+  VERIFIED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  REMOVED
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id            Int              @id @default(autoincrement())
+  name          String
+  email         String           @unique
+  phone         String?
+  passwordHash  String
+  role          Role             @default(USER)
+  // Marks a user as an assignable field worker (keeps the two-role model —
+  // workers are regular USER accounts flagged for auto-assignment).
+  isWorker      Boolean          @default(false)
+  // Field-worker coordinates — used by the nearest-worker auto-assignment.
+  latitude      Float?
+  longitude     Float?
+  refreshToken  String?
+  isActive      Boolean          @default(true)
+  reports       Report[]
+  statusHistory StatusHistory[]
+  adminLogs     AdminLog[]
+  assignments   Assignment[]
+  notifications Notification[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Report {
+  id                 Int             @id @default(autoincrement())
+  userId             Int
+  user               User            @relation(fields: [userId], references: [id])
+  title              String
+  description        String
+  imageUrl           String
+  imageHash          String?
+  roadName           String
+  municipality       String
+  ward               String
+  landmark           String?
+  latitude           Float?
+  longitude          Float?
+  severity           Severity
+  status             Status          @default(PENDING)
+  duplicate          Boolean         @default(false)
+  userHidden         Boolean         @default(false)
+  priorityScore      Int             @default(0)
+  // CNN detection results.
+  confidenceScore    Float?          // softmax confidence of the detected class
+  boundingBox        String?         // JSON: { x, y, width, height } normalized 0..1
+  detectedImageUrl   String?         // the photo with the detection box drawn on it
+  aiVerified         Boolean?        // admin's Verify-AI verdict (null = not reviewed yet)
+  aiRejectedReason   String?
+  // CNN severity classification (authoritative) + the softmax probabilities.
+  aiSeverity         Severity?
+  aiClassProbs       String?         // JSON: [NONE, LOW, MEDIUM, HIGH, CRITICAL] probabilities
+  // Severity the citizen suggested on the form (CNN output wins on conflict).
+  suggestedSeverity  Severity?
+  // How many times a new report was flagged as a duplicate of this one —
+  // feeds the max-heap priority score.
+  confirmations      Int             @default(0)
+  completionImageUrl String?
+  rejectionReason    String?
+  location           Location?
+  history            StatusHistory[]
+  assignments        Assignment[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([municipality])
+  @@index([ward])
+  @@index([createdAt])
+}
+
+model Location {
+  id           Int     @id @default(autoincrement())
+  reportId     Int     @unique
+  report       Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  latitude     Float
+  longitude    Float
+  address      String?
+  municipality String?
+  ward         String?
+  roadName     String?
+  landmark     String?
+}
+
+model StatusHistory {
+  id          Int      @id @default(autoincrement())
+  reportId    Int
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  status      Status
+  remarks     String?
+  updatedById Int?
+  updatedBy   User?    @relation(fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Assignment {
+  id         Int      @id @default(autoincrement())
+  reportId   Int
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id])
+  assignedTo String
+  assignedAt DateTime @default(now())
+
+  @@index([reportId])
+}
+
+model AdminLog {
+  id        Int      @id @default(autoincrement())
+  adminId   Int
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+}
+
+// Public contact form submissions (unauthenticated, rate-limited per IP).
+// No IP is stored — the NFR keeps user data scoped to the reporting workflow.
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
