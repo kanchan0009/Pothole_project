@@ -3,14 +3,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FaCamera,
-  FaMapMarkedAlt,
   FaClipboardCheck,
-  FaBell,
-  FaRoad,
-  FaUsers,
 } from "react-icons/fa";
 import { Card } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
 
 const STEPS = [
   {

@@ -40,6 +40,7 @@ const MAP_STATUS_COLORS: Record<ReportStatus, string> = {
   REJECTED: '#DC3545', // red
   VERIFIED: '#00B4D8', // cyan
   ASSIGNED: '#7C3AED', // purple
+  REMOVED: "#DC3545", // red
 };
 
 function clamp(v: number, min: number, max: number): number {

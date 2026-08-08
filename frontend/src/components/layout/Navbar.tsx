@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { FaCamera, FaRoad, FaTachometerAlt, FaUserCog } from "react-icons/fa";
+import { FaCamera, FaRoad, FaUserCog } from "react-icons/fa";
 import { useState } from "react";
 import { useAuth } from "../../features/auth/auth-context";
 
@@ -13,8 +13,7 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const dashboardPath =
-    user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+  user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-white/70 backdrop-blur-lg">

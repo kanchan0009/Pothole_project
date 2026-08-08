@@ -410,7 +410,7 @@ function Row({ report, onClick }: { report: Report; onClick: () => void }) {
             <Badge tone="success">Work completed</Badge>
           )}
           {report.completionImageUrl && (
-            <Badge tone="accent">Completion photo</Badge>
+            <Badge>Completion photo</Badge>
           )}
         </div>
       </td>

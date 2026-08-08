@@ -967,10 +967,11 @@ function InfoItem({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
+type Step = 1 | 2 | 3 | 4;
 function ReportStepper({
   current,
   completed,
+  
 }: {
   current: Step;
   completed: Set<number>;

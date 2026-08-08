@@ -70,7 +70,6 @@ export function Profile() {
     defaultValues: { name: user?.name ?? "", phone: user?.phone ?? "" },
   });
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -82,7 +81,6 @@ export function Profile() {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
     if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    setAvatarFile(f);
     setAvatarPreview(URL.createObjectURL(f));
   }
 
@@ -351,7 +349,7 @@ export function Profile() {
                           type="button"
                           onClick={() => {
                             setAvatarPreview(null);
-                            setAvatarFile(null);
+                            
                           }}
                           className="rounded-md border px-3 py-1 text-sm"
                         >
