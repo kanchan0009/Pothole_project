@@ -1,45 +1,49 @@
 # RoadGuard API — Express + Prisma
-#
-# The Prisma provider is a build-time choice because the generated client embeds
-# it. Default sqlite (local docker-compose demo); build with
-#   docker build -t roadguard-api --build-arg PRISMA_PROVIDER=postgresql .
-# for a Supabase/Postgres deploy.
+
 FROM node:22-slim
 
 WORKDIR /app
 
-# Prisma's query engine needs OpenSSL on Debian slim images.
+# Prisma requires OpenSSL
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Workspace manifests so `npm ci -w backend` can resolve the lockfile.
-COPY package.json package-lock.json ./
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
+# Copy package manifest
+COPY package.json ./
 
-# Install the backend workspace. Dev deps are kept on purpose: the entrypoint
-# uses the prisma CLI (db push) and tsx (demo seed).
-RUN npm ci -w backend
+# Install dependencies
+RUN npm install
 
-# Prisma schema + TypeScript source.
-COPY backend/prisma backend/prisma
-COPY backend/tsconfig.json backend/tsconfig.json
-COPY backend/src backend/src
+# Copy Prisma schema
+COPY prisma ./prisma
 
-ARG PRISMA_PROVIDER=sqlite
-RUN sed -i "s/provider = \"sqlite\"/provider = \"$PRISMA_PROVIDER\"/" backend/prisma/schema.prisma \
-    && cd backend \
-    && npx prisma generate \
-    && npx tsc -p tsconfig.json
+# Generate Prisma client
+RUN npx prisma generate
 
-# Optional boot-time schema apply + demo seed are gated behind env flags
-# (AUTO_SCHEMA / SEED_DEMO) — never enabled on a hosted database.
-COPY backend/docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+# Copy application source
+COPY src ./src
+
+# Copy supporting directories
+COPY api ./api
+COPY scripts ./scripts
+
+# TypeScript configuration
+COPY tsconfig.json ./
+
+# Build TypeScript
+RUN npx tsc -p tsconfig.json
+
+# Entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Render uses this port
 EXPOSE 5000
-ENV NODE_ENV=production PORT=5000
+
+ENV NODE_ENV=production
+ENV PORT=5000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 CMD ["node", "dist/src/index.js"]
