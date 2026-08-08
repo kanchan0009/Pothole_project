@@ -130,93 +130,79 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-primary">
-      <main className="pt-16">
-        <section className="relative overflow-hidden bg-primary text-white">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
-          <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 md:grid-cols-2 md:py-28">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Badge tone="info" className="bg-accent/15 !text-accent">
-                Trusted by city departments and residents
-              </Badge>
-              <h1 className="mt-6 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-                Report potholes fast. Track repairs clearly.
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-slate-200">
-                RoadGuard connects residents with maintenance crews in minutes.
-                Snap a photo, share a location, and follow your report from
-                submission to completion.
-              </p>
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-primary transition hover:bg-accent-light"
-                >
-                  Report a pothole
-                </Link>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:border-accent hover:text-accent"
-                >
-                  See how it works
-                </a>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="relative flex items-center justify-center"
-            >
-              <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-slate-950 shadow-2xl ring-1 ring-white/10">
-                <img
-                  src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=840&h=560&fit=crop&auto=format"
-                  alt="Road with pothole report"
-                  className="h-[360px] w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent" />
-                <div className="absolute bottom-5 left-5 right-5 rounded-3xl bg-white/95 p-5 shadow-xl backdrop-blur">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-                        Report #PT-2847
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        Main St &amp; 4th Ave — Critical
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-                      Repair Scheduled
-                    </span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-4 gap-2">
-                    {["Received", "Assessed", "Scheduled", "Repaired"].map(
-                      (status, index) => (
-                        <div key={status} className="space-y-2">
-                          <div
-                            className={`h-1 rounded-full ${index < 3 ? "bg-accent" : "bg-slate-200"}`}
-                          />
-                          <p
-                            className={`text-[10px] ${index < 3 ? "text-accent font-semibold" : "text-slate-400"}`}
-                          >
-                            {status}
-                          </p>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+      <main>
+        <section className="relative flex h-[calc(100vh-64px)] min-h-[600px] flex-col overflow-hidden bg-slate-900 text-white">
+          {/* Background Image with Duotone Overlay */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="/hero-bg.png" 
+              alt="Background" 
+              className="h-full w-full object-cover grayscale opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0a25b0] via-[#2138c2] to-[#e60073] mix-blend-multiply opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/50 to-transparent mix-blend-overlay" />
           </div>
 
-          <div className="border-t border-white/10">
-            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 sm:px-6 md:grid-cols-4">
+          {/* Abstract Vector Lines (SVG) */}
+          <div className="absolute right-0 bottom-0 z-0 opacity-[0.25] pointer-events-none">
+            <svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M200 600 V400 Q200 300 300 300 H450 Q550 300 550 200 V0" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M400 600 V400 Q400 300 500 300 H650 Q750 300 750 200 V0" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M600 600 V400 Q600 300 700 300 H850 Q950 300 950 200 V0" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          <div className="relative z-10 flex flex-1 flex-col justify-center w-full">
+            <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 md:py-16">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="max-w-3xl"
+              >
+                <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">
+                  Trusted by city departments and residents
+                </p>
+                <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
+                  Report potholes fast.<br />
+                  <span className="opacity-90 text-white">Track repairs clearly.</span>
+                </h1>
+                <p className="mt-8 max-w-xl text-lg leading-relaxed text-white/70">
+                  RoadGuard connects residents with maintenance crews in minutes.
+                  Snap a photo, share a location, and follow your report from
+                  submission to completion.
+                </p>
+                
+                <div className="mt-12 flex flex-wrap items-center gap-4">
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-accent/80 hover:-translate-y-0.5"
+                  >
+                    Report a pothole
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </Link>
+                  <a
+                    href="#how-it-works"
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 hover:-translate-y-0.5"
+                  >
+                    See how it works
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </a>
+                </div>
+                
+                <p className="mt-8 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
+                  No account required for anonymous reports
+                </p>
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="relative z-10 border-t border-white/10 bg-black/20 backdrop-blur-sm">
+            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-8 sm:px-6 md:grid-cols-4">
               {STATS.map((stat) => (
                 <div key={stat.label} className="text-center">
                   <p className="text-2xl font-extrabold text-accent">
