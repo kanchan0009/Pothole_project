@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-cd /app/backend
+cd /app
 
 # AUTO_SCHEMA=true (docker-compose demo): apply the schema on boot.
 # Leave unset in production — docs/deploy.md applies it once against the hosted
