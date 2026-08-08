@@ -228,7 +228,9 @@ const STATUS_LABEL: Record<Status, string> = {
   IN_PROGRESS: 'In Progress',
   COMPLETED: 'Completed',
   REJECTED: 'Rejected',
+  REMOVED: 'Removed',
 };
+
 const STATUS_COLOR: Record<Status, string> = {
   PENDING: '#FFA500',
   VERIFIED: '#2563EB',
@@ -236,6 +238,7 @@ const STATUS_COLOR: Record<Status, string> = {
   IN_PROGRESS: '#F97316',
   COMPLETED: '#28A745',
   REJECTED: '#6B7280',
+  REMOVED: '#DC2626',
 };
 const SEVERITY_LABEL: Record<Severity, string> = {
   LOW: 'Low',

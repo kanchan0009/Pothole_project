@@ -42,7 +42,6 @@ export async function processImage(file: Express.Multer.File): Promise<Buffer> {
   }
 }
 
-/** Computes a 256-bit perceptual average hash string for duplicate image detection. */
 export async function computeImageHash(buffer: Buffer): Promise<string> {
   try {
     const raw = await sharp(buffer)
@@ -52,15 +51,19 @@ export async function computeImageHash(buffer: Buffer): Promise<string> {
       .toBuffer();
 
     let sum = 0;
+
     for (let i = 0; i < raw.length; i++) {
-      sum += raw[i];
+      sum += raw[i] ?? 0;
     }
+
     const avg = sum / raw.length;
 
     let hashStr = '';
+
     for (let i = 0; i < raw.length; i++) {
-      hashStr += raw[i] >= avg ? '1' : '0';
+      hashStr += (raw[i] ?? 0) >= avg ? '1' : '0';
     }
+
     return hashStr;
   } catch {
     return '';

@@ -116,23 +116,32 @@ export const reportService = {
     // Process image first to validate content & calculate perceptual hash
     const processed = await processImage(file);
     const imageHash = await computeImageHash(processed);
+// Duplicate image check: reject if identical/similar image was uploaded for an open report
+if (imageHash) {
+  const openReportsWithHash = await prisma.report.findMany({
+    where: {
+      status: { in: [...OPEN_STATUSES] as Status[] },
+      imageHash: { not: null },
+    },
+    select: { id: true, imageHash: true },
+  });
 
-    // Duplicate image check: reject if identical/similar image was uploaded for an open report
-    if (imageHash) {
-      const openReportsWithHash = await prisma.report.findMany({
-        where: {
-          status: { in: [...OPEN_STATUSES] as Status[] },
-          imageHash: { not: null },
-        },
-        select: { id: true, imageHash: true },
-      });
-      for (const existing of openReportsWithHash) {
-        if (existing.imageHash && hammingDistance(imageHash, existing.imageHash) <= 25) {
-          await notifyDuplicate(userId, 'This pothole has already been reported by another user.');
-          throw ApiError.conflict('This pothole has already been reported by another user.', 'DUPLICATE_IMAGE');
-        }
-      }
+  for (const existing of openReportsWithHash) {
+    if (
+      existing.imageHash &&
+      hammingDistance(imageHash, existing.imageHash) <= 25
+    ) {
+      await notifyDuplicate(
+        userId,
+        'This pothole has already been reported by another user.'
+      );
+
+      throw ApiError.conflict(
+        'This pothole has already been reported by another user.'
+      );
     }
+  }
+}
 
     // Location duplicate detection: check GPS distance or address match
     let duplicate = false;
