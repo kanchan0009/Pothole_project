@@ -7,6 +7,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean; // restoring the session on first load
   login: (input: LoginInput) => Promise<User>;
+  googleLogin: (token: string) => Promise<User>;
   adminLogin: (input: { email: string; password: string }) => Promise<User>;
   register: (input: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
@@ -74,6 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user;
   }
 
+  async function googleLogin(token: string): Promise<User> {
+    const res = await authApi.googleLogin(token);
+    persistSession(res.token, res.refreshToken, res.user);
+    return res.user;
+  }
+
   async function adminLogin(input: { email: string; password: string }): Promise<User> {
     const res = await authApi.adminLogin(input);
     persistSession(res.token, res.refreshToken, res.user);
@@ -105,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, login, adminLogin, register, logout, updateStoredUser }),
+    () => ({ user, isLoading, login, googleLogin, adminLogin, register, logout, updateStoredUser }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, isLoading]
   );

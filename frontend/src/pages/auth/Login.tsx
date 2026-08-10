@@ -7,6 +7,7 @@ import { useAuth } from '../../features/auth/auth-context';
 import { useToast } from '../../components/ui/Toast';
 import { Button } from '../../components/ui/Button';
 import { AuthShell } from './AuthShell';
+import { GoogleLogin } from '@react-oauth/google';
 
 const schema = z.object({
   email: z.string().trim().email('Enter a valid email address'),
@@ -17,7 +18,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function Login() {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
@@ -29,7 +30,7 @@ export function Login() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { rememberMe: false },
+    defaultValues: { rememberMe: true },
   });
 
   const from = (location.state as { from?: string } | null)?.from || '/dashboard';
@@ -78,6 +79,33 @@ export function Login() {
           Log in
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center justify-between">
+        <span className="w-1/5 border-b border-primary/10 lg:w-1/4"></span>
+        <span className="text-xs text-center text-primary/40 uppercase tracking-wider font-semibold">Or continue with</span>
+        <span className="w-1/5 border-b border-primary/10 lg:w-1/4"></span>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              setServerError('');
+              try {
+                await googleLogin(credentialResponse.credential);
+                toast.success('Welcome back!');
+                navigate(from, { replace: true });
+              } catch (err) {
+                setServerError(err instanceof Error ? err.message : 'Google Login failed');
+              }
+            }
+          }}
+          onError={() => {
+            setServerError('Google Login Failed');
+          }}
+          useOneTap
+        />
+      </div>
 
       <p className="mt-6 text-center text-sm text-primary/60">
         New to RoadGuard?{' '}

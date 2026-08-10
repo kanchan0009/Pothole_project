@@ -6,6 +6,7 @@ import {
   FaClipboardCheck,
 } from "react-icons/fa";
 import { Card } from "../components/ui/Card";
+import { useAuth } from "../features/auth/auth-context";
 
 const STEPS = [
   {
@@ -122,6 +123,7 @@ const FAQS = [
 
 export function Landing() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background text-primary">
@@ -129,9 +131,9 @@ export function Landing() {
         <section className="relative flex h-[calc(100vh-64px)] min-h-[600px] flex-col overflow-hidden bg-slate-900 text-white">
           {/* Background Image with Duotone Overlay */}
           <div className="absolute inset-0 z-0">
-            <img 
-              src="/hero-bg.png" 
-              alt="Background" 
+            <img
+              src="/hero-bg.png"
+              alt="Background"
               className="h-full w-full object-cover grayscale opacity-90"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-[#0a25b0] via-[#2138c2] to-[#e60073] mix-blend-multiply opacity-90" />
@@ -158,29 +160,41 @@ export function Landing() {
                 <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">
                   Trusted by city departments and residents
                 </p>
-                <h1 className="text-6xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight">
                   Report potholes fast.<br />
                   <span className="opacity-90 text-white">Track repairs clearly.</span>
                 </h1>
-                <p className="mt-8 max-w-xl text-lg leading-relaxed text-white/70">
+                <p className="mt-6 sm:mt-8 max-w-xl text-base sm:text-lg leading-relaxed text-white/70">
                   RoadGuard connects residents with maintenance crews in minutes.
                   Snap a photo, share a location, and follow your report from
                   submission to completion.
                 </p>
-                
-                <div className="mt-12 flex flex-wrap items-center gap-4">
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-accent/80 hover:-translate-y-0.5"
-                  >
-                    Report a pothole
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
-                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </Link>
+
+                <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                  {user ? (
+                    <Link
+                      to={user.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
+                      className="inline-flex justify-center items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-accent/80 hover:-translate-y-0.5"
+                    >
+                      Go to Dashboard
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/register"
+                      className="inline-flex justify-center items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-accent/80 hover:-translate-y-0.5"
+                    >
+                      Report a pothole
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
+                  )}
                   <a
                     href="#how-it-works"
-                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 hover:-translate-y-0.5"
+                    className="inline-flex justify-center items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 hover:-translate-y-0.5"
                   >
                     See how it works
                     <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
@@ -188,10 +202,8 @@ export function Landing() {
                     </svg>
                   </a>
                 </div>
-                
-                <p className="mt-8 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
-                  No account required for anonymous reports
-                </p>
+
+
               </motion.div>
             </div>
           </div>
@@ -467,19 +479,35 @@ export function Landing() {
               Join thousands of residents who have already helped improve road
               safety in their community.
             </p>
-            <Link
-              to="/register"
-              className="mt-10 inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 text-sm font-semibold text-primary transition hover:bg-accent-light"
-            >
-              Report a pothole now
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path
-                  fillRule="evenodd"
-                  d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </Link>
+            {user ? (
+              <Link
+                to={user.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
+                className="mt-10 inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 text-sm font-semibold text-primary transition hover:bg-accent-light"
+              >
+                Go to Dashboard
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path
+                    fillRule="evenodd"
+                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </Link>
+            ) : (
+              <Link
+                to="/register"
+                className="mt-10 inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 text-sm font-semibold text-primary transition hover:bg-accent-light"
+              >
+                Report a pothole now
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path
+                    fillRule="evenodd"
+                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </Link>
+            )}
           </div>
         </section>
       </main>

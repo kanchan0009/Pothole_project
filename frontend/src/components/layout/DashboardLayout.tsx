@@ -15,11 +15,17 @@ import { useToast } from '../ui/Toast';
 import { NotificationsBell } from '../ui/NotificationsBell';
 import { NotificationToastWatcher } from '../ui/NotificationToastWatcher';
 
-const NAV = [
+const ADMIN_NAV = [
   { to: '/admin/dashboard', label: 'Overview', icon: FaTachometerAlt, end: true },
   { to: '/admin/dashboard/reports', label: 'Reports', icon: FaClipboardList, end: false },
   { to: '/admin/dashboard/users', label: 'Users', icon: FaUsers, end: false },
   { to: '/admin/dashboard/messages', label: 'Messages', icon: FaEnvelope, end: false },
+];
+
+const USER_NAV = [
+  { to: '/dashboard', label: 'My Dashboard', icon: FaTachometerAlt, end: true },
+  { to: '/report', label: 'Report Hazard', icon: FaClipboardList, end: false },
+  { to: '/profile', label: 'My Profile', icon: FaUsers, end: false },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -33,20 +39,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/');
   }
 
+  const isAdmin = user?.role === 'ADMIN';
+  const navLinks = isAdmin ? ADMIN_NAV : USER_NAV;
+
   return (
-    <div className="flex h-full flex-col bg-primary text-white">
+    <div className="flex h-full flex-col bg-[#0f284e] text-white">
       <div className="flex items-center gap-3 px-5 py-5">
         <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/15 text-accent">
           <FaRoad className="text-lg" />
         </span>
         <div>
           <p className="text-base font-extrabold tracking-tight">RoadGuard</p>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-accent/80">Admin Console</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-accent/80">
+            {isAdmin ? 'Admin Console' : 'Citizen Portal'}
+          </p>
         </div>
       </div>
 
       <nav className="mt-2 flex-1 space-y-1 px-3">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {navLinks.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -86,8 +97,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** Persistent admin shell — sidebar + topbar + routed content. */
-export function AdminLayout() {
+/** Persistent dashboard shell — sidebar + topbar + routed content. */
+export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
 

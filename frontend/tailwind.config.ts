@@ -22,6 +22,14 @@ export default {
         success: '#28A745',
         warning: '#FFA500',
         danger: '#DC3545',
+        dashboard: {
+          blue: '#1964B0',
+          green: '#10B981',
+          orange: '#F97316',
+          purple: '#8B5CF6',
+          red: '#EF4444',
+          slate: '#475569',
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

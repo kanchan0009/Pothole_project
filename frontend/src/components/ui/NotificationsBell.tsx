@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaBell, FaTimes } from "react-icons/fa";
+import { PartyPopper } from "lucide-react";
 import { notificationsApi } from "../../api/admin";
 import { formatTime } from "../../lib/format";
 import { useToast } from "./Toast";
@@ -101,8 +102,8 @@ export function NotificationsBell() {
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {visibleNotifications.length === 0 && (
-                  <p className="px-4 py-8 text-center text-sm text-primary/50">
-                    You're all caught up 🎉
+                  <p className="flex items-center justify-center gap-2 px-4 py-8 text-center text-sm text-primary/50">
+                    You're all caught up <PartyPopper className="h-4 w-4" />
                   </p>
                 )}
                 {visibleNotifications.map((n) => (

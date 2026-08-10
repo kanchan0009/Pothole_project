@@ -12,7 +12,7 @@ import { ResetPassword } from '../pages/auth/ResetPassword';
 import { AdminLogin } from '../pages/auth/AdminLogin';
 import { UserDashboard } from '../pages/UserDashboard';
 import { Profile } from '../pages/Profile';
-import { AdminLayout } from '../components/layout/AdminLayout';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { AdminOverview } from '../pages/admin/AdminOverview';
 import { AdminReports } from '../pages/admin/AdminReports';
 import { AdminUsers } from '../pages/admin/AdminUsers';
@@ -58,21 +58,25 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: '/dashboard',
+        path: '/report',
         element: (
           <RequireAuth>
-            <UserDashboard />
+            <NewReport />
           </RequireAuth>
         ),
       },
-      {
-        path: '/profile',
-        element: (
-          <RequireAuth>
-            <Profile />
-          </RequireAuth>
-        ),
-      },
+    ],
+  },
+  {
+    path: '/',
+    element: (
+      <RequireAuth>
+        <DashboardLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { path: 'dashboard', element: <UserDashboard /> },
+      { path: 'profile', element: <Profile /> },
     ],
   },
   {
@@ -83,7 +87,7 @@ export const router = createBrowserRouter([
     path: '/admin/dashboard',
     element: (
       <RequireAdmin>
-        <AdminLayout />
+        <DashboardLayout />
       </RequireAdmin>
     ),
     children: [

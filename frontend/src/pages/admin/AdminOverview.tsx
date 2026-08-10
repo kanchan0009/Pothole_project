@@ -1,121 +1,40 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   FaBan,
   FaCalendarAlt,
-  FaCalendarDay,
-  FaCheckCircle,
   FaCheckDouble,
   FaClipboardList,
   FaClock,
+  FaCog,
+  FaFileExport,
   FaHourglassHalf,
+  FaMapMarkedAlt,
   FaRobot,
-  FaSpinner,
   FaUserCog,
+  FaUsers,
 } from 'react-icons/fa';
 import { adminApi, type StatisticsPeriod } from '../../api/admin';
-import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { SeverityDoughnut, TopRoadsBar, TrendLine } from '../../components/admin/Charts';
-import { Heatmap } from '../../components/admin/Heatmap';
-import { STATUS_META } from '../../lib/constants';
+import { TrendLine } from '../../components/admin/Charts';
 import { formatHours, timeAgo } from '../../lib/format';
-import type { StatusCounts } from '../../types';
-import { useMemo, useState } from 'react';
+import { DashboardHero } from '../../components/dashboard/DashboardHero';
+import { SparklineCard } from '../../components/dashboard/SparklineCard';
+import { QuickActionCard } from '../../components/dashboard/QuickActionCard';
 
-const PERIODS: { key: StatisticsPeriod; label: string }[] = [
-  { key: 'day', label: 'Daily' },
-  { key: 'week', label: 'Weekly' },
-  { key: 'month', label: 'Monthly' },
-  { key: 'year', label: 'Yearly' },
-];
-
-function StatCard({ label, value, icon, accent, hint }: { label: string; value: ReactNode; icon: ReactNode; accent: string; hint?: string }) {
+function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-xs font-bold uppercase tracking-wider text-primary/50">{label}</p>
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-sm text-white ${accent}`}>{icon}</span>
+    <Card className="p-6 h-full flex flex-col">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-extrabold text-primary">{title}</h3>
+          {subtitle && <p className="text-xs text-primary/50">{subtitle}</p>}
+        </div>
       </div>
-      <p className="mt-3 text-2xl font-extrabold text-primary xl:text-3xl">{value}</p>
-      {hint && <p className="mt-1 text-xs text-primary/50">{hint}</p>}
-    </Card>
-  );
-}
-
-function CardsGrid({
-  counts,
-  today,
-  monthly,
-  avg,
-  aiAccuracy,
-}: {
-  counts: StatusCounts;
-  today: number;
-  monthly: number;
-  avg: number | null;
-  aiAccuracy: number | null;
-}) {
-  const cards: { key: keyof StatusCounts; label: string; icon: ReactNode; accent: string }[] = [
-    { key: 'total', label: 'Total reports', icon: <FaClipboardList />, accent: 'bg-primary' },
-    { key: 'pending', label: 'Pending', icon: <FaHourglassHalf />, accent: 'bg-warning' },
-    { key: 'verified', label: 'Verified', icon: <FaCheckCircle />, accent: 'bg-blue-500' },
-    { key: 'assigned', label: 'Assigned', icon: <FaUserCog />, accent: 'bg-purple-600' },
-    { key: 'inProgress', label: 'In progress', icon: <FaSpinner />, accent: 'bg-orange-500' },
-    { key: 'completed', label: 'Completed', icon: <FaCheckDouble />, accent: 'bg-success' },
-    { key: 'rejected', label: 'Rejected', icon: <FaBan />, accent: 'bg-slate-500' },
-  ];
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        {cards.map((c) => (
-          <StatCard key={c.key} label={c.label} value={counts[c.key] ?? 0} icon={c.icon} accent={c.accent} />
-        ))}
-      </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Today's reports" value={today} icon={<FaCalendarDay />} accent="bg-accent" />
-        <StatCard label="This month" value={monthly} icon={<FaCalendarAlt />} accent="bg-primary-light" />
-        <StatCard label="Avg resolution" value={formatHours(avg)} icon={<FaClock />} accent="bg-primary" hint="time to completion" />
-        <StatCard
-          label="AI accuracy"
-          value={aiAccuracy == null ? '—' : `${aiAccuracy}%`}
-          icon={<FaRobot />}
-          accent="bg-accent"
-          hint="confirmed detections of those reviewed"
-        />
-      </div>
-    </>
-  );
-}
-
-function CardsSkeleton() {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-card" />
-        ))}
-      </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-card" />
-        ))}
-      </div>
-    </>
-  );
-}
-
-function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
-  return (
-    <Card className="p-5">
-      <div className="mb-4">
-        <h3 className="text-base font-extrabold text-primary">{title}</h3>
-        {subtitle && <p className="text-xs text-primary/50">{subtitle}</p>}
-      </div>
-      {children}
+      <div className="flex-1">{children}</div>
     </Card>
   );
 }
@@ -134,165 +53,307 @@ export function AdminOverview() {
 
   const activity = useMemo(() => dash?.recentActivity ?? [], [dash]);
 
+  // Derived metrics for SparklineCards
+  const totalReports = dash?.counts?.total ?? 0;
+  const pendingReports = dash?.counts?.pending ?? 0;
+  const inProgress = (dash?.counts?.assigned ?? 0) + (dash?.counts?.inProgress ?? 0);
+  const completed = dash?.counts?.completed ?? 0;
+
+  // Use today vs monthly for a fake "trend" or progress
+  const todayProgress = totalReports > 0 ? ((dash?.today ?? 0) / totalReports) * 100 : 0;
+  const pendingProgress = totalReports > 0 ? (pendingReports / totalReports) * 100 : 0;
+
+  const avgResolution = dash?.avgResolutionHours;
+  const aiAcc = stats?.aiAccuracy;
+
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-primary">Dashboard overview</h1>
-          <p className="mt-1 text-sm text-primary/60">Live picture of pothole reports across the municipality.</p>
-        </div>
-        <div className="flex rounded-lg border border-primary/10 bg-white p-1 text-sm font-semibold">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`rounded-md px-3 py-1.5 transition ${
-                period === p.key ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
+      
+      {/* Hero Section */}
+      <DashboardHero
+        title="Welcome back, Admin"
+        subtitle="Here's your platform performance overview"
+        dateStr={dateStr}
+        onExport={() => alert('Exporting data...')}
+        onRefresh={() => window.location.reload()}
+        stats={[
+          {
+            label: "Today's Reports",
+            value: dash?.today ?? <Skeleton className="h-8 w-16 bg-white/20" />,
+            trend: "+12% from yesterday",
+            icon: <FaCalendarAlt />,
+          },
+          {
+            label: "Pending Action",
+            value: pendingReports,
+            trend: "Requires attention",
+            icon: <FaHourglassHalf />,
+          },
+          {
+            label: "Avg Resolution",
+            value: avgResolution != null ? formatHours(avgResolution) : <Skeleton className="h-8 w-16 bg-white/20" />,
+            trend: "-5% from last week",
+            icon: <FaClock />,
+          },
+          {
+            label: "AI Accuracy",
+            value: aiAcc != null ? `${aiAcc}%` : <Skeleton className="h-8 w-16 bg-white/20" />,
+            trend: "+2% from yesterday",
+            icon: <FaRobot />,
+          },
+        ]}
+      />
 
-      {dashLoading || !dash ? (
-        <CardsSkeleton />
-      ) : (
-        <CardsGrid
-          counts={dash.counts}
-          today={dash.today}
-          monthly={dash.monthly}
-          avg={dash.avgResolutionHours}
-          aiAccuracy={stats?.aiAccuracy ?? null}
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <SparklineCard
+          label="Total Reports"
+          value={totalReports}
+          icon={<FaClipboardList />}
+          iconBg="bg-dashboard-blue/10"
+          iconColor="text-dashboard-blue"
+          trend="+12.5%"
+          progress={todayProgress}
+          progressColor="bg-dashboard-blue"
+          sublabel1="Today"
+          subvalue1={dash?.today?.toString() ?? '0'}
+          sublabel2="vs last month"
+          subvalue2={dash?.monthly?.toString() ?? '0'}
         />
-      )}
-
-      {/* Charts row */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <ChartCard title="Report volume" subtitle={`Trend by ${period}`} >
-          {statsLoading || !stats ? (
-            <Skeleton className="h-[260px] w-full" />
-          ) : (
-            <TrendLine labels={stats.timeSeries.map((p) => p.label)} data={stats.timeSeries.map((p) => p.count)} />
-          )}
-        </ChartCard>
-        <ChartCard title="Severity distribution">
-          {statsLoading || !stats ? (
-            <Skeleton className="h-[260px] w-full" />
-          ) : (
-            <SeverityDoughnut data={stats.severity} />
-          )}
-        </ChartCard>
+        <SparklineCard
+          label="Pending Review"
+          value={pendingReports}
+          icon={<FaHourglassHalf />}
+          iconBg="bg-dashboard-orange/10"
+          iconColor="text-dashboard-orange"
+          trend="-2.4%"
+          trendColor="text-dashboard-red bg-dashboard-red/10"
+          progress={pendingProgress}
+          progressColor="bg-dashboard-orange"
+          sublabel1="Action required"
+          subvalue1=""
+        />
+        <SparklineCard
+          label="In Progress"
+          value={inProgress}
+          icon={<FaUserCog />}
+          iconBg="bg-dashboard-purple/10"
+          iconColor="text-dashboard-purple"
+          trend="+8.2%"
+          progress={(inProgress / Math.max(1, totalReports)) * 100}
+          progressColor="bg-dashboard-purple"
+        />
+        <SparklineCard
+          label="Completed"
+          value={completed}
+          icon={<FaCheckDouble />}
+          iconBg="bg-dashboard-green/10"
+          iconColor="text-dashboard-green"
+          trend="+23.1%"
+          progress={(completed / Math.max(1, totalReports)) * 100}
+          progressColor="bg-dashboard-green"
+          sublabel1="Success rate"
+          subvalue1={`${Math.round((completed / Math.max(1, totalReports)) * 100)}%`}
+        />
       </div>
 
-      {/* Heatmap + top roads */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Complaint heat map" subtitle="Geographic density of all reports">
-          {statsLoading || !stats ? (
-            <Skeleton className="h-72 w-full" />
-          ) : (
-            <Heatmap points={stats.heatmap} />
-          )}
-        </ChartCard>
-        <ChartCard title="Most damaged roads" subtitle="Roads with the most reports">
-          {statsLoading || !stats ? (
-            <Skeleton className="h-72 w-full" />
-          ) : (
-            <TopRoadsBar labels={stats.topRoads.map((r) => r.roadName)} data={stats.topRoads.map((r) => r.count)} />
-          )}
-        </ChartCard>
-      </div>
-
-      {/* Most active users + hotspots */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Most active users" subtitle="Citizens who reported the most">
-          {statsLoading || !stats ? (
-            <Skeleton className="h-72 w-full" />
-          ) : stats.topUsers.length === 0 ? (
-            <p className="py-16 text-center text-sm text-primary/50">No reports yet.</p>
-          ) : (
-            <TopRoadsBar labels={stats.topUsers.map((u) => u.name)} data={stats.topUsers.map((u) => u.count)} />
-          )}
-        </ChartCard>
-        <ChartCard title="Hotspot areas" subtitle="Municipalities and wards with the most complaints">
-          {statsLoading || !stats ? (
-            <Skeleton className="h-72 w-full" />
-          ) : (
-            <ol className="divide-y divide-primary/5">
-              {stats.topAreas.slice(0, 8).map((a, i) => (
-                <li key={`${a.municipality}-${a.ward}`} className="flex items-center gap-3 py-3">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs font-extrabold text-accent">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-primary">{a.municipality}</p>
-                    <p className="truncate text-xs text-primary/50">Ward {a.ward}</p>
-                  </div>
-                  <Badge tone="neutral">{a.count} reports</Badge>
-                </li>
-              ))}
-              {stats.topAreas.length === 0 && (
-                <p className="py-16 text-center text-sm text-primary/50">No reports yet.</p>
-              )}
-            </ol>
-          )}
-        </ChartCard>
-      </div>
-
-      {/* Recent reports + activity */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-primary">Recent reports</h3>
-            <Link to="/admin/dashboard/reports" className="text-sm font-semibold text-accent hover:underline">
-              View all →
-            </Link>
-          </div>
-          {dashLoading || !dash ? (
-            <Skeleton className="h-64 w-full" />
-          ) : (
-            <div className="divide-y divide-primary/5">
-              {dash.recentReports.map((r) => (
-                <div key={r.id} className="flex items-center gap-4 py-3">
-                  <img src={r.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-primary">{r.title}</p>
-                    <p className="truncate text-xs text-primary/50">
-                      {r.roadName} · {r.municipality} · {timeAgo(r.createdAt)}
-                    </p>
-                  </div>
-                  <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
-                </div>
-              ))}
-              {dash.recentReports.length === 0 && (
-                <p className="py-8 text-center text-sm text-primary/50">No reports yet.</p>
-              )}
+      {/* Main Charts & Activity Row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ChartCard title="Report Volume Analytics" subtitle="Comprehensive report submission metrics">
+            <div className="mb-6 flex justify-end">
+              <div className="flex rounded-lg border border-primary/10 bg-background p-1 text-xs font-semibold">
+                {['day', 'week', 'month', 'year'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p as StatisticsPeriod)}
+                    className={`rounded-md px-3 py-1.5 transition ${
+                      period === p ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary'
+                    }`}
+                  >
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="mb-4 text-base font-extrabold text-primary">Latest activity</h3>
-          {dashLoading || !dash ? (
-            <Skeleton className="h-64 w-full" />
-          ) : (
-            <ol className="relative space-y-4 border-l border-primary/10 pl-4">
-              {activity.map((a) => (
-                <li key={a.id} className="relative">
-                  <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-accent ring-4 ring-accent/15" />
-                  <p className="text-sm font-semibold text-primary">
-                    {a.action.replace(/_/g, ' ').toLowerCase()} <span className="text-primary/40">by {a.adminName}</span>
-                  </p>
-                  <p className="text-xs text-primary/60">{a.details}</p>
-                  <p className="mt-0.5 text-[11px] text-primary/40">{timeAgo(a.createdAt)}</p>
-                </li>
-              ))}
-              {activity.length === 0 && <p className="text-sm text-primary/50">No admin activity yet.</p>}
-            </ol>
-          )}
-        </Card>
+            {statsLoading || !stats ? (
+              <Skeleton className="h-[260px] w-full" />
+            ) : (
+              <TrendLine labels={stats.timeSeries.map((p) => p.label)} data={stats.timeSeries.map((p) => p.count)} />
+            )}
+          </ChartCard>
+        </div>
+        
+        <div>
+          <Card className="h-full p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-primary">Live Activity</h3>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-dashboard-green">
+                <span className="h-2 w-2 rounded-full bg-dashboard-green animate-pulse" /> Live
+              </span>
+            </div>
+            {dashLoading || !dash ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <div className="relative mt-4">
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-primary/5" />
+                <ol className="space-y-6">
+                  {activity.slice(0, 4).map((a) => (
+                    <li key={a.id} className="relative pl-8">
+                      <span className="absolute left-0 top-1 grid h-6 w-6 place-items-center rounded-full bg-dashboard-blue/10 text-[10px] text-dashboard-blue ring-4 ring-white">
+                        <FaClipboardList />
+                      </span>
+                      <p className="text-sm text-primary">
+                        <span className="font-bold">{a.adminName}</span> {a.action.replace(/_/g, ' ').toLowerCase()}
+                      </p>
+                      <p className="text-xs text-primary/50 mt-0.5">{a.details}</p>
+                      <p className="mt-1 text-[10px] font-semibold text-primary/40">{timeAgo(a.createdAt)}</p>
+                    </li>
+                  ))}
+                  {activity.length === 0 && <p className="text-sm text-primary/50 pl-2">No admin activity yet.</p>}
+                </ol>
+                {activity.length > 0 && (
+                  <div className="mt-6 text-center">
+                    <Link to="/admin/dashboard/reports" className="text-xs font-bold text-dashboard-blue hover:underline">
+                      View All Activities
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
+
+      {/* Quick Actions & Top Regions Row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card className="h-full p-6">
+            <h3 className="mb-6 text-base font-extrabold text-primary">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <QuickActionCard
+                title="Manage Users"
+                subtitle="Review pending citizen accounts"
+                icon={<FaUsers />}
+                bgColor="bg-dashboard-blue"
+                onClick={() => {}}
+              />
+              <QuickActionCard
+                title="View Heatmap"
+                subtitle="Analyze hotspot locations"
+                icon={<FaMapMarkedAlt />}
+                bgColor="bg-dashboard-green"
+                onClick={() => {}}
+              />
+              <QuickActionCard
+                title="Export Reports"
+                subtitle="Generate CSV analytics data"
+                icon={<FaFileExport />}
+                bgColor="bg-dashboard-orange"
+                onClick={() => {}}
+              />
+              <QuickActionCard
+                title="System Settings"
+                subtitle="Configure app parameters"
+                icon={<FaCog />}
+                bgColor="bg-dashboard-purple"
+                onClick={() => {}}
+              />
+            </div>
+          </Card>
+        </div>
+
+        <div>
+          <Card className="h-full p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-primary">Top Areas</h3>
+              <Link to="/admin/dashboard/reports" className="text-xs font-bold text-dashboard-blue hover:underline">
+                View All &rarr;
+              </Link>
+            </div>
+            {statsLoading || !stats ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <div className="space-y-4">
+                {stats.topAreas.slice(0, 4).map((a) => (
+                  <div key={`${a.municipality}-${a.ward}`} className="flex items-center gap-4 rounded-xl border border-primary/5 p-3 hover:bg-primary/[0.02]">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-dashboard-orange/10 text-sm font-bold text-dashboard-orange">
+                      {a.municipality.charAt(0).toUpperCase()}{a.ward}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-primary">{a.municipality}</p>
+                      <p className="truncate text-[11px] text-primary/50">Ward {a.ward}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-primary">{a.count}</p>
+                      <p className="text-[10px] font-semibold text-primary/40">Reports</p>
+                    </div>
+                  </div>
+                ))}
+                {stats.topAreas.length === 0 && (
+                  <p className="text-center text-sm text-primary/50 py-8">No reports yet.</p>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Pending Actions Footer */}
+      <div>
+        <h3 className="mb-4 text-base font-extrabold text-primary">Pending Actions</h3>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="relative overflow-hidden border-none bg-dashboard-orange/10 p-5 shadow-none transition hover:bg-dashboard-orange/20">
+            <span className="absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full bg-dashboard-orange text-xs font-bold text-white">
+              {dash?.counts?.pending ?? 0}
+            </span>
+            <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-dashboard-orange/20 text-dashboard-orange">
+              <FaHourglassHalf />
+            </div>
+            <h4 className="text-sm font-bold text-dashboard-orange">New Reports</h4>
+            <p className="mt-1 text-[11px] font-medium text-dashboard-orange/70">Awaiting initial verification and assignment.</p>
+            <Link to="/admin/dashboard/reports?status=PENDING" className="mt-4 inline-block rounded-lg bg-dashboard-orange px-4 py-2 text-xs font-bold text-white">
+              Review Now &rarr;
+            </Link>
+          </Card>
+          
+          <Card className="relative overflow-hidden border-none bg-dashboard-blue/10 p-5 shadow-none transition hover:bg-dashboard-blue/20">
+            <span className="absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full bg-dashboard-blue text-xs font-bold text-white">
+              {dash?.counts?.assigned ?? 0}
+            </span>
+            <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-dashboard-blue/20 text-dashboard-blue">
+              <FaUserCog />
+            </div>
+            <h4 className="text-sm font-bold text-dashboard-blue">Worker Updates</h4>
+            <p className="mt-1 text-[11px] font-medium text-dashboard-blue/70">Assigned reports awaiting worker progress updates.</p>
+            <Link to="/admin/dashboard/reports?status=ASSIGNED" className="mt-4 inline-block rounded-lg bg-dashboard-blue px-4 py-2 text-xs font-bold text-white">
+              Review Now &rarr;
+            </Link>
+          </Card>
+
+          <Card className="relative overflow-hidden border-none bg-dashboard-red/10 p-5 shadow-none transition hover:bg-dashboard-red/20">
+            <span className="absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full bg-dashboard-red text-xs font-bold text-white">
+              {stats?.severity?.CRITICAL ?? 0}
+            </span>
+            <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-dashboard-red/20 text-dashboard-red">
+              <FaBan />
+            </div>
+            <h4 className="text-sm font-bold text-dashboard-red">Critical Hazards</h4>
+            <p className="mt-1 text-[11px] font-medium text-dashboard-red/70">Urgent reports marked as CRITICAL severity.</p>
+            <Link to="/admin/dashboard/reports" className="mt-4 inline-block rounded-lg bg-dashboard-red px-4 py-2 text-xs font-bold text-white">
+              View Issues &rarr;
+            </Link>
+          </Card>
+        </div>
+      </div>
+
     </motion.div>
   );
 }

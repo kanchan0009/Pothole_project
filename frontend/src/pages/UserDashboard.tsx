@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -12,11 +12,10 @@ import {
   FaHourglassHalf,
   FaSearch,
   FaSpinner,
+  FaUserCog,
 } from 'react-icons/fa';
 import { reportsApi } from '../api/reports';
 import { useAuth } from '../features/auth/auth-context';
-import { NotificationsBell } from '../components/ui/NotificationsBell';
-import { NotificationToastWatcher } from '../components/ui/NotificationToastWatcher';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -24,8 +23,10 @@ import { Skeleton, SkeletonRow } from '../components/ui/Skeleton';
 import { ReportDetailDrawer } from '../components/user/ReportDetailDrawer';
 import { SEVERITY_META, STATUS_META, STATUS_ORDER } from '../lib/constants';
 import { timeAgo } from '../lib/format';
-import { reportRef } from '../lib/receipt';
 import type { ReportStatus, Severity } from '../types';
+import { DashboardHero } from '../components/dashboard/DashboardHero';
+import { SparklineCard } from '../components/dashboard/SparklineCard';
+import { QuickActionCard } from '../components/dashboard/QuickActionCard';
 
 const PAGE_SIZE = 8;
 
@@ -33,18 +34,6 @@ const TABS: { key: ReportStatus | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
   ...STATUS_ORDER.map((s) => ({ key: s, label: STATUS_META[s].label })),
 ];
-
-function StatCard({ label, value, icon, accent }: { label: string; value: ReactNode; icon: ReactNode; accent: string }) {
-  return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] font-bold uppercase tracking-wider text-primary/50">{label}</p>
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs text-white ${accent}`}>{icon}</span>
-      </div>
-      <p className="mt-2 text-2xl font-extrabold text-primary">{value}</p>
-    </Card>
-  );
-}
 
 function SeverityChip({ severity }: { severity: Severity }) {
   const meta = SEVERITY_META[severity];
@@ -64,7 +53,6 @@ export function UserDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // Summary cards — independent of the filtered list.
   const { data: stats } = useQuery({ queryKey: ['user', 'stats'], queryFn: reportsApi.mineStats });
 
   useEffect(() => {
@@ -72,7 +60,6 @@ export function UserDashboard() {
     return () => window.clearTimeout(t);
   }, [search]);
 
-  // Any filter change starts back at page 1.
   useEffect(() => {
     setPage(1);
   }, [status, debouncedSearch]);
@@ -94,132 +81,208 @@ export function UserDashboard() {
   });
 
   const s = stats?.status;
-  const inProgress = s ? s.assigned + s.inProgress : null;
+  const inProgress = s ? s.assigned + s.inProgress : 0;
   const totalPages = data?.pagination.totalPages ?? 1;
 
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-primary">Welcome back, {user?.name?.split(' ')[0] ?? 'Citizen'}</h1>
-          <p className="mt-1 text-sm text-primary/60">Track your reports and follow their repair progress.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationsBell />
-          <NotificationToastWatcher />
-          <Link to="/report" className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-accent-light">
-            <FaCamera /> Report a hazard
-          </Link>
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
+      
+      {/* Hero Section */}
+      <DashboardHero
+        title={`Welcome back, ${user?.name?.split(' ')[0] ?? 'Citizen'}`}
+        subtitle="Track your reports and follow their repair progress."
+        dateStr={dateStr}
+        onRefresh={() => window.location.reload()}
+        stats={[
+          {
+            label: "Total Reports",
+            value: s ? s.total : <Skeleton className="h-8 w-16 bg-white/20" />,
+            icon: <FaClipboardList />,
+          },
+          {
+            label: "Repaired",
+            value: s ? s.completed : <Skeleton className="h-8 w-16 bg-white/20" />,
+            icon: <FaCheckDouble />,
+          },
+          {
+            label: "In Progress",
+            value: s ? inProgress : <Skeleton className="h-8 w-16 bg-white/20" />,
+            icon: <FaSpinner />,
+          },
+          {
+            label: "Community Rank",
+            value: "Top 15%",
+            icon: <FaUserCog />,
+          },
+        ]}
+      />
 
-      {/* Summary cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total reports" value={s ? s.total : <Skeleton className="h-7 w-10" />} icon={<FaClipboardList />} accent="bg-primary" />
-        <StatCard label="Pending review" value={s ? s.pending : <Skeleton className="h-7 w-10" />} icon={<FaHourglassHalf />} accent="bg-warning" />
-        <StatCard label="In progress" value={inProgress != null ? inProgress : <Skeleton className="h-7 w-10" />} icon={<FaSpinner />} accent="bg-orange-500" />
-        <StatCard label="Completed" value={s ? s.completed : <Skeleton className="h-7 w-10" />} icon={<FaCheckDouble />} accent="bg-success" />
+        <SparklineCard
+          label="Total Reports"
+          value={s ? s.total : 0}
+          icon={<FaClipboardList />}
+          iconBg="bg-dashboard-blue/10"
+          iconColor="text-dashboard-blue"
+          progress={100}
+          progressColor="bg-dashboard-blue"
+        />
+        <SparklineCard
+          label="Pending Review"
+          value={s ? s.pending : 0}
+          icon={<FaHourglassHalf />}
+          iconBg="bg-dashboard-orange/10"
+          iconColor="text-dashboard-orange"
+          progress={s?.total ? ((s.pending / s.total) * 100) : 0}
+          progressColor="bg-dashboard-orange"
+        />
+        <SparklineCard
+          label="In Progress"
+          value={inProgress}
+          icon={<FaSpinner />}
+          iconBg="bg-dashboard-purple/10"
+          iconColor="text-dashboard-purple"
+          progress={s?.total ? ((inProgress / s.total) * 100) : 0}
+          progressColor="bg-dashboard-purple"
+        />
+        <SparklineCard
+          label="Completed"
+          value={s ? s.completed : 0}
+          icon={<FaCheckDouble />}
+          iconBg="bg-dashboard-green/10"
+          iconColor="text-dashboard-green"
+          progress={s?.total ? ((s.completed / s.total) * 100) : 0}
+          progressColor="bg-dashboard-green"
+        />
       </div>
 
-      {/* Filters */}
-      <Card className="mt-6 p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-52 flex-1">
-            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-primary/35" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search your reports…"
-              className="input-field h-10 pl-9 text-sm"
-            />
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setStatus(t.key)}
-                className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
-                  status === t.key ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* My reports */}
-      <Card className="mt-4 overflow-hidden">
-        {isFetching && !data ? (
-          <div className="px-5 py-4">
-            <SkeletonRow lines={PAGE_SIZE} />
-          </div>
-        ) : (data?.reports ?? []).length === 0 ? (
-          <div className="px-5 py-14 text-center">
-            <p className="text-sm font-semibold text-primary/70">No reports yet.</p>
-            <p className="mt-1 text-xs text-primary/50">Spot a pothole? Let the municipality know.</p>
-            <Link
-              to="/report"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-accent-light"
-            >
-              <FaCamera /> Report a hazard
-            </Link>
-          </div>
-        ) : (
-          <div className="divide-y divide-primary/5">
-            {(data?.reports ?? []).map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setSelectedId(r.id)}
-                className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.03]"
-              >
-                <img src={r.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-bold text-primary">{r.title}</p>
-                    {r.duplicate && (
-                      <Badge tone="warning">
-                        <FaFlag /> Duplicate
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-primary/50">
-                    {r.roadName} · {r.municipality} · Ward {r.ward}
-                  </p>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <SeverityChip severity={r.severity} />
-                    <span className="text-[11px] font-semibold text-primary/40">Priority {r.priorityScore}</span>
-                    <span className="text-[11px] text-primary/40">· {reportRef(r.id)}</span>
-                    <span className="text-[11px] text-primary/40">· {timeAgo(r.createdAt)}</span>
-                  </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main List */}
+        <div className="lg:col-span-2">
+          <Card className="flex h-full flex-col p-0">
+            <div className="border-b border-primary/5 p-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative min-w-52 flex-1">
+                  <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-primary/35" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search your reports…"
+                    className="input-field h-10 pl-9 text-sm"
+                  />
                 </div>
-                <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
-                <FaChevronRight className="shrink-0 text-primary/30" />
-              </button>
-            ))}
-          </div>
-        )}
+                <div className="flex flex-wrap gap-1 rounded-lg border border-primary/10 p-1">
+                  {TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setStatus(t.key)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                        status === t.key ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary hover:bg-primary/5'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {/* Pagination */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/5 px-5 py-4">
-          <p className="text-xs text-primary/50">
-            {data ? `${data.pagination.total} total report${data.pagination.total === 1 ? '' : 's'}` : 'Loading…'}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              <FaChevronLeft /> Prev
-            </Button>
-            <span className="px-1 text-xs font-semibold text-primary/60">
-              Page {page} of {totalPages}
-            </span>
-            <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next <FaChevronRight />
-            </Button>
-          </div>
+            <div className="flex-1 overflow-hidden">
+              {isFetching && !data ? (
+                <div className="px-5 py-4">
+                  <SkeletonRow lines={PAGE_SIZE} />
+                </div>
+              ) : (data?.reports ?? []).length === 0 ? (
+                <div className="px-5 py-14 text-center">
+                  <p className="text-sm font-semibold text-primary/70">No reports yet.</p>
+                  <p className="mt-1 text-xs text-primary/50">Spot a pothole? Let the municipality know.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-primary/5">
+                  {(data?.reports ?? []).map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setSelectedId(r.id)}
+                      className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.02]"
+                    >
+                      <img src={r.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-sm" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-bold text-primary">{r.title}</p>
+                          {r.duplicate && (
+                            <Badge tone="warning">
+                              <FaFlag /> Duplicate
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-primary/50">
+                          {r.roadName} · {r.municipality} · {timeAgo(r.createdAt)}
+                        </p>
+                      </div>
+                      <div className="hidden sm:block">
+                        <SeverityChip severity={r.severity} />
+                      </div>
+                      <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
+                      <FaChevronRight className="shrink-0 text-primary/20" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between border-t border-primary/5 px-5 py-4">
+              <p className="text-[11px] font-semibold text-primary/40">
+                {data ? `${data.pagination.total} REPORT${data.pagination.total === 1 ? '' : 'S'}` : 'LOADING…'}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" className="h-8 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  <FaChevronLeft />
+                </Button>
+                <span className="px-3 text-xs font-bold text-primary/60">
+                  {page} / {totalPages}
+                </span>
+                <Button size="sm" variant="outline" className="h-8 px-2" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  <FaChevronRight />
+                </Button>
+              </div>
+            </div>
+          </Card>
         </div>
-      </Card>
+
+        {/* Quick Actions Side Column */}
+        <div>
+          <Card className="p-6">
+            <h3 className="mb-6 text-base font-extrabold text-primary">Quick Actions</h3>
+            <div className="space-y-4">
+              <Link to="/report" className="block">
+                <QuickActionCard
+                  title="Report a Hazard"
+                  subtitle="Snap a photo of a pothole"
+                  icon={<FaCamera />}
+                  bgColor="bg-dashboard-blue"
+                />
+              </Link>
+              <Link to="/profile" className="block">
+                <QuickActionCard
+                  title="Profile Settings"
+                  subtitle="Update your contact info"
+                  icon={<FaUserCog />}
+                  bgColor="bg-dashboard-purple"
+                />
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </div>
 
       <ReportDetailDrawer reportId={selectedId} onClose={() => setSelectedId(null)} />
     </motion.div>

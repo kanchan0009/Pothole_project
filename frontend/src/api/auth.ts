@@ -36,6 +36,7 @@ async function del<T>(url: string): Promise<T> {
 export const authApi = {
   register: (data: RegisterInput) => post<AuthResponse>('/auth/register', data),
   login: (data: LoginInput) => post<AuthResponse>('/auth/login', data),
+  googleLogin: (token: string) => post<AuthResponse>('/auth/google', { token }),
   adminLogin: (data: Pick<LoginInput, 'email' | 'password'>) => post<AuthResponse>('/admin/login', data),
   logout: (refreshToken: string) => post<{ message: string }>('/auth/logout', { refreshToken }),
   me: async () => {

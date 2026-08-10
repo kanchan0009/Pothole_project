@@ -8,6 +8,7 @@ import { useToast } from '../../components/ui/Toast';
 import { Button } from '../../components/ui/Button';
 import { AuthShell } from './AuthShell';
 import { passwordRule } from '../../lib/validators';
+import { GoogleLogin } from '@react-oauth/google';
 
 const schema = z
   .object({
@@ -25,7 +26,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export function Register() {
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, googleLogin } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [serverError, setServerError] = useState('');
@@ -94,6 +95,33 @@ export function Register() {
           Create account
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center justify-between">
+        <span className="w-1/5 border-b border-primary/10 lg:w-1/4"></span>
+        <span className="text-xs text-center text-primary/40 uppercase tracking-wider font-semibold">Or continue with</span>
+        <span className="w-1/5 border-b border-primary/10 lg:w-1/4"></span>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              setServerError('');
+              try {
+                await googleLogin(credentialResponse.credential);
+                toast.success('Account created — welcome!');
+                navigate('/dashboard', { replace: true });
+              } catch (err) {
+                setServerError(err instanceof Error ? err.message : 'Google Sign-up failed');
+              }
+            }
+          }}
+          onError={() => {
+            setServerError('Google Sign-up Failed');
+          }}
+          useOneTap
+        />
+      </div>
 
       <p className="mt-6 text-center text-sm text-primary/60">
         Already have an account?{' '}

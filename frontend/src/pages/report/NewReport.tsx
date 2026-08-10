@@ -14,6 +14,7 @@ import {
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { Ruler, Footprints, Sun, RefreshCcw } from "lucide-react";
 import { reportsApi, type NearbyReport } from "../../api/reports";
 import { LocationPicker } from "../../components/map/LocationPicker";
 import { Badge } from "../../components/ui/Badge";
@@ -1029,17 +1030,17 @@ function Sidebar() {
       >
         <h3 className="text-sm font-semibold text-slate-900">Photo Tips</h3>
         <ul className="mt-4 space-y-3 text-xs text-slate-500">
-          <li className="flex gap-2">
-            <span>📐</span> Stand 1–2 m away for context
+          <li className="flex items-center gap-2">
+            <Ruler className="h-4 w-4" /> Stand 1–2 m away for context
           </li>
-          <li className="flex gap-2">
-            <span>👟</span> Include a reference object for scale
+          <li className="flex items-center gap-2">
+            <Footprints className="h-4 w-4" /> Include a reference object for scale
           </li>
-          <li className="flex gap-2">
-            <span>☀️</span> Daylight photos are sharpest
+          <li className="flex items-center gap-2">
+            <Sun className="h-4 w-4" /> Daylight photos are sharpest
           </li>
-          <li className="flex gap-2">
-            <span>🔄</span> Capture multiple angles when possible
+          <li className="flex items-center gap-2">
+            <RefreshCcw className="h-4 w-4" /> Capture multiple angles when possible
           </li>
         </ul>
       </div>

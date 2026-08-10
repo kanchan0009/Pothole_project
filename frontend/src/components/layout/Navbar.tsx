@@ -13,7 +13,6 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-white/70 backdrop-blur-lg">
@@ -46,8 +45,14 @@ export function Navbar() {
           {user ? (
             <>
               <Link
-                to="/report"
+                to={user.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
                 className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-accent-light"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/report"
+                className="flex items-center gap-2 rounded-lg border border-primary/15 px-3 py-2 text-sm font-semibold text-primary/70 transition hover:border-accent hover:text-accent"
               >
                 <FaCamera /> Report
               </Link>
@@ -124,9 +129,16 @@ export function Navbar() {
             {user ? (
               <>
                 <Link
-                  to="/report"
+                  to={user.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
                   onClick={() => setOpen(false)}
                   className="flex-1 rounded-lg bg-accent py-2 text-center text-sm font-semibold text-white"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/report"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 rounded-lg border border-primary/20 py-2 text-center text-sm font-semibold"
                 >
                   Report
                 </Link>

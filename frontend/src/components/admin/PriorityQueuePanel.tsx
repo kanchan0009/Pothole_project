@@ -11,7 +11,7 @@ import { Skeleton } from '../ui/Skeleton';
 import { useToast } from '../ui/Toast';
 
 /** How many queue rows to render (the heap itself holds every open report). */
-const DISPLAY_LIMIT = 8;
+const DISPLAY_LIMIT = 4;
 
 /**
  * The Max Heap priority queue, rendered in priority order. The crown marks the
