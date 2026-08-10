@@ -17,6 +17,7 @@ import {
   registerSchema,
   resetPasswordSchema,
   updateProfileSchema,
+  googleLoginSchema,
 } from '../validations/auth.schema.js';
 
 export const authRoutes = Router();
@@ -24,6 +25,7 @@ export const authRoutes = Router();
 // Public — every unauthenticated auth path is rate-limited per IP.
 authRoutes.post('/register', authRegisterLimiter, validateBody(registerSchema), asyncHandler(authController.register));
 authRoutes.post('/login', authLoginLimiter, validateBody(loginSchema), asyncHandler(authController.login));
+authRoutes.post('/google', authLoginLimiter, validateBody(googleLoginSchema), asyncHandler(authController.googleLogin));
 authRoutes.post('/refresh', validateBody(refreshSchema), asyncHandler(authController.refresh));
 authRoutes.post('/logout', validateBody(logoutSchema), asyncHandler(authController.logout));
 authRoutes.post(

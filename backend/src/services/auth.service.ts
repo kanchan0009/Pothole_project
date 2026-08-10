@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { Role, User } from '@prisma/client';
+import { OAuth2Client } from 'google-auth-library';
 import { userRepo } from '../repositories/user.repo.js';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -12,6 +13,8 @@ import {
   verifyRefreshToken,
   verifyResetToken,
 } from '../utils/tokens.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export interface AuthResult {
   token: string;
@@ -78,6 +81,10 @@ export const authService = {
       throw ApiError.unauthorized('Invalid email or password');
     }
 
+    if (!user.passwordHash) {
+      throw ApiError.unauthorized('This account uses Google Sign-In. Please sign in with Google.');
+    }
+
     const valid = bcrypt.compareSync(input.password, user.passwordHash);
     if (!valid) {
       throw ApiError.unauthorized('Invalid email or password');
@@ -92,6 +99,48 @@ export const authService = {
     }
 
     return issueSession(user, input.rememberMe ?? false);
+  },
+
+  async googleLogin(idToken: string): Promise<AuthResult> {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw ApiError.unauthorized('Invalid Google token');
+    }
+
+    const { email, name, sub: googleId } = payload;
+    
+    let user = await userRepo.findByEmail(email);
+    if (user) {
+      if (!user.googleId) {
+        user = await userRepo.update(user.id, { googleId });
+      }
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: name || 'Google User',
+          email,
+          googleId,
+          role: 'USER',
+        }
+      });
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Welcome to RoadGuard',
+          message: 'Thank you for registering via Google. Start reporting road hazards in your community.',
+        },
+      });
+    }
+
+    if (!user.isActive) {
+      throw ApiError.forbidden('This account has been deactivated. Contact support.');
+    }
+
+    return issueSession(user, true);
   },
 
   async refresh(refreshToken: string): Promise<{ token: string; refreshToken: string }> {
@@ -134,6 +183,11 @@ export const authService = {
     const user = await userRepo.findByEmail(email);
     if (!user) return; // never reveal whether the email exists
 
+    if (!user.passwordHash) {
+      // User signed up with Google, shouldn't send reset link
+      return; 
+    }
+
     const token = signResetToken(user.id);
     const resetLink = `http://localhost:5173/reset-password?token=${token}`;
     // Dev delivery: log the link (wire up a real mailer/queue in production).
@@ -174,6 +228,9 @@ export const authService = {
     if (input.phone !== undefined) data.phone = input.phone ?? null;
 
     if (input.newPassword) {
+      if (!user.passwordHash) {
+         throw ApiError.badRequest('This account uses Google Sign-In and cannot have a password set this way.');
+      }
       if (!input.currentPassword || !bcrypt.compareSync(input.currentPassword, user.passwordHash)) {
         throw ApiError.badRequest('Current password is incorrect');
       }
@@ -207,6 +264,7 @@ export const authService = {
       refreshToken: null,
       latitude: null,
       longitude: null,
+      googleId: null,
     });
   },
 };

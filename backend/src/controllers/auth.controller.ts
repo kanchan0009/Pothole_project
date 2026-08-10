@@ -13,6 +13,11 @@ export const authController = {
     res.json({ success: true, data: result });
   },
 
+  async googleLogin(req: Request, res: Response) {
+    const result = await authService.googleLogin(req.body.token);
+    res.json({ success: true, data: result });
+  },
+
   async refresh(req: Request, res: Response) {
     const result = await authService.refresh(req.body.refreshToken);
     res.json({ success: true, data: result });

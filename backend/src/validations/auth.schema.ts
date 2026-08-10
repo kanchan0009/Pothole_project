@@ -14,6 +14,10 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+export const googleLoginSchema = z.object({
+  token: z.string().min(1, 'Google token is required'),
+});
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'refreshToken is required'),
 });

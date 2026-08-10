@@ -47,7 +47,7 @@ model User {
   name          String
   email         String           @unique
   phone         String?
-  passwordHash  String
+  passwordHash  String?
   role          Role             @default(USER)
   // Marks a user as an assignable field worker (keeps the two-role model —
   // workers are regular USER accounts flagged for auto-assignment).
@@ -56,6 +56,7 @@ model User {
   latitude      Float?
   longitude     Float?
   refreshToken  String?
+  googleId      String?          @unique
   isActive      Boolean          @default(true)
   reports       Report[]
   statusHistory StatusHistory[]

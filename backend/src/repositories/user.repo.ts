@@ -14,12 +14,13 @@ export const userRepo = {
   create(data: {
     name: string;
     email: string;
-    passwordHash: string;
+    passwordHash?: string | null;
     phone?: string | null;
     role: 'USER' | 'ADMIN';
     isWorker?: boolean;
     latitude?: number | null;
     longitude?: number | null;
+    googleId?: string | null;
   }) {
     return prisma.user.create({ data });
   },
@@ -28,13 +29,14 @@ export const userRepo = {
     name?: string;
     email?: string;
     phone?: string | null;
-    passwordHash?: string;
+    passwordHash?: string | null;
     refreshToken?: string | null;
     isActive?: boolean;
     role?: 'USER' | 'ADMIN';
     isWorker?: boolean;
     latitude?: number | null;
     longitude?: number | null;
+    googleId?: string | null;
   }) {
     return prisma.user.update({ where: { id }, data });
   },
