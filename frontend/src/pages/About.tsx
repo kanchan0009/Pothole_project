@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
 import { FaCheck, FaHandHoldingHeart } from 'react-icons/fa';
 
