@@ -69,6 +69,9 @@ export const adminApi = {
   contactMessages: (params: { page?: number; limit?: number; search?: string } = {}) =>
     apiClient.get('/admin/contact-messages', { params }).then((r) => r as unknown as ContactMessageList),
 
+  replyContactMessage: (id: number, replyText: string) =>
+    apiClient.post(`/admin/contact-messages/${id}/reply`, { replyText }).then((r) => r as unknown as { success: boolean }),
+
   updateUser: (
     id: number,
     body: { role?: 'USER' | 'ADMIN'; isActive?: boolean; isWorker?: boolean; latitude?: number; longitude?: number }

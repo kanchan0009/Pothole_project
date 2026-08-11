@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -46,12 +46,31 @@ function SeverityChip({ severity }: { severity: Severity }) {
 }
 
 export function UserDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialId = searchParams.get('reportId') ? parseInt(searchParams.get('reportId')!, 10) : null;
+
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<ReportStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(initialId);
+
+  useEffect(() => {
+    const id = searchParams.get('reportId');
+    if (id) {
+       setSelectedId(parseInt(id, 10));
+    }
+  }, [searchParams]);
+
+  const handleDrawerClose = () => {
+    setSelectedId(null);
+    if (searchParams.has('reportId')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('reportId');
+      setSearchParams(newParams);
+    }
+  };
 
   const { data: stats } = useQuery({ queryKey: ['user', 'stats'], queryFn: reportsApi.mineStats });
 
@@ -284,7 +303,7 @@ export function UserDashboard() {
         </div>
       </div>
 
-      <ReportDetailDrawer reportId={selectedId} onClose={() => setSelectedId(null)} />
+      <ReportDetailDrawer reportId={selectedId} onClose={handleDrawerClose} />
     </motion.div>
   );
 }

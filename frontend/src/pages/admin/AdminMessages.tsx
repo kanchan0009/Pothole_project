@@ -6,6 +6,7 @@ import { adminApi } from '../../api/admin';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { SkeletonRow } from '../../components/ui/Skeleton';
+import { useToast } from '../../components/ui/Toast';
 import { formatDate } from '../../lib/format';
 import type { ContactMessage } from '../../types';
 
@@ -31,7 +32,7 @@ export function AdminMessages() {
     [page, debouncedSearch]
   );
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: ['admin', 'contact-messages', params],
     queryFn: () => adminApi.contactMessages(params),
     placeholderData: (prev) => prev,
@@ -76,6 +77,7 @@ export function AdminMessages() {
                 message={m}
                 expanded={expanded === m.id}
                 onToggle={() => setExpanded(expanded === m.id ? null : m.id)}
+                onReply={() => refetch()}
               />
             ))}
           </ul>
@@ -111,11 +113,32 @@ function MessageRow({
   message,
   expanded,
   onToggle,
+  onReply,
 }: {
   message: ContactMessage;
   expanded: boolean;
   onToggle: () => void;
+  onReply: () => void;
 }) {
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
+  const toast = useToast();
+
+  const handleReply = async () => {
+    if (!replyText.trim()) return;
+    setSending(true);
+    try {
+      await adminApi.replyContactMessage(message.id, replyText);
+      toast.success("Reply sent successfully");
+      setReplyText("");
+      onReply();
+    } catch (err) {
+      toast.error("Failed to send reply");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <li>
       <button
@@ -144,7 +167,22 @@ function MessageRow({
       </button>
       {expanded && (
         <div className="border-t border-primary/5 bg-primary/[0.02] px-5 py-4">
-          <p className="text-sm leading-relaxed text-primary/80">{message.message}</p>
+          <p className="text-sm leading-relaxed text-primary/80 mb-4">{message.message}</p>
+          <div className="mt-4 pt-4 border-t border-primary/10">
+            <h4 className="text-sm font-bold text-primary mb-2">Reply to user</h4>
+            <textarea
+              className="w-full rounded-xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary placeholder-primary/40 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition"
+              rows={3}
+              placeholder="Type your reply here..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+            />
+            <div className="mt-2 flex justify-end">
+              <Button size="sm" onClick={handleReply} loading={sending} disabled={!replyText.trim()}>
+                Send Reply
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </li>

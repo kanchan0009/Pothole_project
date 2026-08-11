@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -79,6 +80,9 @@ function SeverityChip({ severity }: { severity: Severity }) {
 }
 
 export function AdminReports() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialId = searchParams.get('reportId') ? parseInt(searchParams.get('reportId')!, 10) : null;
+
   const toast = useToast();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -88,8 +92,24 @@ export function AdminReports() {
   const [municipality, setMunicipality] = useState("");
   const [ward, setWard] = useState("");
   const [sort, setSort] = useState<AdminReportParams["sort"]>("newest");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(initialId);
   const [exporting, setExporting] = useState<AdminExportFormat | null>(null);
+
+  useEffect(() => {
+    const id = searchParams.get('reportId');
+    if (id) {
+       setSelectedId(parseInt(id, 10));
+    }
+  }, [searchParams]);
+
+  const handleDrawerClose = () => {
+    setSelectedId(null);
+    if (searchParams.has('reportId')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('reportId');
+      setSearchParams(newParams);
+    }
+  };
 
   // Debounce the search box so the table doesn't refetch per keystroke.
   useEffect(() => {
@@ -354,7 +374,7 @@ export function AdminReports() {
         </div>
       </Card>
 
-      <ReportDrawer reportId={selectedId} onClose={() => setSelectedId(null)} />
+      <ReportDrawer reportId={selectedId} onClose={handleDrawerClose} />
     </motion.div>
   );
 }

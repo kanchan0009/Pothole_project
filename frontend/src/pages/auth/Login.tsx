@@ -38,9 +38,13 @@ export function Login() {
   async function onSubmit(values: FormValues) {
     setServerError('');
     try {
-      await login(values);
+      const user = await login(values);
       toast.success('Welcome back!');
-      navigate(from, { replace: true });
+      if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -92,9 +96,13 @@ export function Login() {
             if (credentialResponse.credential) {
               setServerError('');
               try {
-                await googleLogin(credentialResponse.credential);
+                const user = await googleLogin(credentialResponse.credential);
                 toast.success('Welcome back!');
-                navigate(from, { replace: true });
+                if (user.role === 'ADMIN') {
+                  navigate('/admin/dashboard', { replace: true });
+                } else {
+                  navigate(from, { replace: true });
+                }
               } catch (err) {
                 setServerError(err instanceof Error ? err.message : 'Google Login failed');
               }

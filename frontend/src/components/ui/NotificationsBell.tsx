@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaBell, FaTimes } from "react-icons/fa";
 import { PartyPopper } from "lucide-react";
 import { notificationsApi } from "../../api/admin";
 import { formatTime } from "../../lib/format";
+import { useAuth } from "../../features/auth/auth-context";
 import { useToast } from "./Toast";
 
 /**
@@ -25,7 +27,7 @@ export function NotificationsBell() {
   const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
   const unread = data?.unreadCount ?? 0;
   const visibleNotifications =
-    data?.notifications.filter((n) => !n.isRead && !hiddenIds.has(n.id)) ?? [];
+    data?.notifications.filter((n) => !hiddenIds.has(n.id)) ?? [];
 
   async function toggle() {
     const next = !open;
@@ -42,6 +44,33 @@ export function NotificationsBell() {
       toast.error(
         err instanceof Error ? err.message : "Could not update notification",
       );
+    }
+  }
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  async function handleNotificationClick(n: any) {
+    if (!n.isRead) {
+      markRead(n.id);
+    }
+    setOpen(false);
+
+    if (n.title.toLowerCase().includes("contact message")) {
+      if (user?.role === "ADMIN") {
+        navigate("/admin/dashboard/messages");
+      }
+      return;
+    }
+
+    const match = n.message.match(/RG-0*(\d+)/);
+    if (match) {
+      const reportId = match[1];
+      if (user?.role === "ADMIN") {
+        navigate(`/admin/reports?reportId=${reportId}`);
+      } else {
+        navigate(`/dashboard?reportId=${reportId}`);
+      }
     }
   }
 
@@ -115,7 +144,7 @@ export function NotificationsBell() {
                   >
                     <button
                       type="button"
-                      onClick={() => !n.isRead && markRead(n.id)}
+                      onClick={() => handleNotificationClick(n)}
                       className="text-left"
                       style={{
                         all: "unset",
