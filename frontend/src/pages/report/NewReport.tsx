@@ -306,7 +306,8 @@ export function NewReport() {
     if (source === "manual" && (!detection || (!detection.isPothole && !overrideAi))) {
       toast.error(
         detection && !detection.isPothole
-          ? "No pothole detected — please upload another photo or confirm bypass"
+          ? detection.message ??
+              "No pothole detected — please upload another photo or confirm bypass"
           : "AI detection is still analyzing the photo",
       );
       return;
@@ -646,9 +647,18 @@ export function NewReport() {
                             <FaExclamationTriangle /> No pothole detected
                           </p>
                           <p className="mt-1 text-sm text-primary/70">
-                            Please upload another image that clearly shows the
-                            pothole.
+                            {detection.message ??
+                              "This photo does not appear to contain a pothole. Please upload another image that clearly shows the road hazard."}
                           </p>
+                          {detection.classProbs && detection.classProbs[0] !== undefined && (
+                            <p className="mt-2 text-xs text-primary/50">
+                              AI classification: {Math.round(detection.classProbs[0] * 100)}% no
+                              pothole
+                              {detection.confidence > 0
+                                ? ` · ${Math.round(detection.confidence * 100)}% best pothole match`
+                                : ""}
+                            </p>
+                          )}
                         </div>
                         <label className="flex items-center gap-2 text-sm text-primary/80 cursor-pointer p-2 hover:bg-primary/5 rounded-lg transition">
                           <input

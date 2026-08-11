@@ -29,6 +29,8 @@ export interface DetectionResult {
   severity?: Severity;
   /** Softmax probabilities over [NONE, LOW, MEDIUM, HIGH, CRITICAL]. */
   classProbs?: number[];
+  /** Server explanation when no pothole was found. */
+  message?: string;
 }
 
 export interface User {

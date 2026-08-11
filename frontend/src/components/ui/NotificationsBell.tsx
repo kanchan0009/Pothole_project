@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaBell, FaTimes } from "react-icons/fa";
 import { PartyPopper } from "lucide-react";
@@ -16,6 +16,7 @@ import { useToast } from "./Toast";
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const toast = useToast();
+  const queryClient = useQueryClient();
   const { data, refetch } = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
@@ -24,10 +25,11 @@ export function NotificationsBell() {
     refetchOnWindowFocus: true,
   });
 
-  const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
   const unread = data?.unreadCount ?? 0;
+  // Only unread items belong in the feed — dismissed/read ones stay in the DB
+  // but must not reappear after a refresh.
   const visibleNotifications =
-    data?.notifications.filter((n) => !hiddenIds.has(n.id)) ?? [];
+    data?.notifications.filter((n) => !n.isRead) ?? [];
 
   async function toggle() {
     const next = !open;
@@ -37,9 +39,8 @@ export function NotificationsBell() {
 
   async function markRead(id: number) {
     try {
-      await notificationsApi.markRead(id);
-      setHiddenIds((prev) => new Set(prev).add(id));
-      refetch();
+      const updated = await notificationsApi.markRead(id);
+      queryClient.setQueryData(["notifications"], updated);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Could not update notification",
@@ -76,9 +77,8 @@ export function NotificationsBell() {
 
   async function markAll() {
     try {
-      await notificationsApi.markAllRead();
-      setHiddenIds(new Set(data?.notifications.map((n) => n.id) ?? []));
-      refetch();
+      const updated = await notificationsApi.markAllRead();
+      queryClient.setQueryData(["notifications"], updated);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Could not update notifications",
@@ -138,9 +138,7 @@ export function NotificationsBell() {
                 {visibleNotifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`group flex w-full items-start justify-between border-b border-primary/5 px-4 py-3 transition hover:bg-background ${
-                      n.isRead ? "opacity-60" : ""
-                    }`}
+                    className="group flex w-full items-start justify-between border-b border-primary/5 px-4 py-3 transition hover:bg-background"
                   >
                     <button
                       type="button"

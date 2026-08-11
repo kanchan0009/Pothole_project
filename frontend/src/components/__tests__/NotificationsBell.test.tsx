@@ -64,14 +64,19 @@ describe('NotificationsBell', () => {
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
-  it('lists notifications when opened and marks an unread one as read', async () => {
+  it('lists unread notifications when opened and marks one as read', async () => {
     renderBell();
     fireEvent.click(await screen.findByLabelText('Notifications'));
 
     expect(await screen.findByText('Report verified')).toBeInTheDocument();
-    expect(screen.getByText('Report completed')).toBeInTheDocument();
+    expect(screen.queryByText('Report completed')).not.toBeInTheDocument();
 
-    // Clicking the unread row calls markRead for that id.
+    vi.mocked(notificationsApi.markRead).mockResolvedValue({
+      ...LIST,
+      unreadCount: 0,
+      notifications: LIST.notifications.map((n) => ({ ...n, isRead: true })),
+    });
+
     fireEvent.click(screen.getByText('Report verified'));
     await vi.waitFor(() => {
       expect(notificationsApi.markRead).toHaveBeenCalledWith(1);
