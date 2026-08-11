@@ -22,15 +22,16 @@ export const contactRepo = {
 
   /** Newest-first, optional free-text across name/email/subject. */
   async list({ page, limit, search }: ContactMessageListQuery) {
-    const where: Prisma.ContactMessageWhereInput = search
-      ? {
-          OR: [
-            { name: { contains: search } },
-            { email: { contains: search } },
-            { subject: { contains: search } },
-          ],
-        }
-      : {};
+    const where: any = {
+      isReplied: false,
+      ...(search ? {
+        OR: [
+          { name: { contains: search } },
+          { email: { contains: search } },
+          { subject: { contains: search } },
+        ],
+      } : {})
+    };
 
     const [items, total] = await Promise.all([
       prisma.contactMessage.findMany({

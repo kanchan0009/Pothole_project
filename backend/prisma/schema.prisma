@@ -184,6 +184,7 @@ model ContactMessage {
   email     String
   subject   String
   message   String
+  isReplied Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([createdAt])

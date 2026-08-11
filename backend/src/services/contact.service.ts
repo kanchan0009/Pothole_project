@@ -50,6 +50,25 @@ export const contactService = {
       pagination: { page: query.page, limit: query.limit, total, totalPages: Math.max(1, Math.ceil(total / query.limit)) },
     };
   },
+
+  async replyMessage(id: number, replyText: string): Promise<void> {
+    const message = await prisma.contactMessage.findUnique({ where: { id } });
+    if (!message) throw new Error('Message not found');
+
+    const user = await prisma.user.findUnique({ where: { email: message.email } });
+    if (user) {
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Reply to your contact message',
+          message: `Admin replied: ${replyText}`,
+        },
+      });
+    }
+    
+    // Mark message as replied instead of deleting it
+    await (prisma.contactMessage as any).update({ where: { id }, data: { isReplied: true } });
+  },
 };
 
 async function notifyAdmins(title: string, message: string): Promise<void> {

@@ -14,4 +14,15 @@ export const contactController = {
     const data = await contactService.listMessages(query);
     res.json({ success: true, data });
   },
+
+  async reply(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const { replyText } = req.body;
+    if (!id || !replyText) {
+      res.status(400).json({ success: false, error: { message: 'Missing id or replyText' } });
+      return;
+    }
+    await contactService.replyMessage(parseInt(id, 10), replyText);
+    res.json({ success: true });
+  },
 };

@@ -65,6 +65,7 @@ adminRoutes.get('/logs', asyncHandler(adminController.logs));
 
 // Contact form submissions
 adminRoutes.get('/contact-messages', asyncHandler(contactController.list));
+adminRoutes.post('/contact-messages/:id/reply', asyncHandler(contactController.reply));
 
 // Exports (CSV / XLSX / PDF)
 adminRoutes.get('/export/:format', asyncHandler(adminController.exportReports));
