@@ -27,6 +27,7 @@ COPY src ./src
 # Copy supporting directories
 COPY api ./api
 COPY scripts ./scripts
+COPY data ./data
 
 # TypeScript configuration
 COPY tsconfig.json ./
