@@ -14,6 +14,8 @@ export interface DetectionResult {
   severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   /** Softmax probabilities over [NONE, LOW, MEDIUM, HIGH, CRITICAL]. */
   classProbs?: number[];
+  /** Human-readable explanation when no pothole was found. */
+  message?: string;
 }
 
 /**
