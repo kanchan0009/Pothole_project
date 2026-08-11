@@ -113,6 +113,8 @@ export function NewReport() {
   const searchTimerRef = useRef<number | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
+  const [overrideAi, setOverrideAi] = useState(false);
+
   // Consume a capture handed over by the map page. Stored in sessionStorage so
   // it survives a login redirect; cleared once applied;
   useEffect(() => {
@@ -143,34 +145,11 @@ export function NewReport() {
     void runDetection(file);
   }
 
-  async function capturePhoto() {
+  function capturePhoto() {
     stopCamera();
     setCameraError(null);
-
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera capture is not supported in this browser');
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-    } catch (err) {
-      if (cameraInputRef.current) {
-        cameraInputRef.current.click();
-        return;
-      }
-
-      setCameraError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to access the camera. Please allow camera permission.',
-      );
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
     }
   }
 
@@ -184,6 +163,7 @@ export function NewReport() {
     setPhotoPreview(null);
     setDetection(null);
     setDetectError(null);
+    setOverrideAi(false);
     stopCamera();
   }
 
@@ -258,6 +238,7 @@ export function NewReport() {
     setDetecting(true);
     setDetection(null);
     setDetectError(null);
+    setOverrideAi(false);
     try {
       setDetection(await reportsApi.detect(file));
     } catch (err) {
@@ -322,10 +303,10 @@ export function NewReport() {
       );
       return;
     }
-    if (source === "manual" && (!detection || !detection.isPothole)) {
+    if (source === "manual" && (!detection || (!detection.isPothole && !overrideAi))) {
       toast.error(
         detection && !detection.isPothole
-          ? "No pothole detected — please upload another photo"
+          ? "No pothole detected — please upload another photo or confirm bypass"
           : "AI detection is still analyzing the photo",
       );
       return;
@@ -343,7 +324,7 @@ export function NewReport() {
     form.append("latitude", String(location.latitude));
     form.append("longitude", String(location.longitude));
     form.append("ignoreDuplicate", String(ignoreDuplicate));
-    form.append("skipDetection", String(source === "map"));
+    form.append("skipDetection", String(source === "map" || overrideAi));
 
     setSubmitting(true);
     try {
@@ -369,7 +350,7 @@ export function NewReport() {
 
   const stepsCompleted = new Set<number>();
   if (photoPreview) stepsCompleted.add(1);
-  if (source === "map" || (detection && detection.isPothole))
+  if (source === "map" || overrideAi || (detection && detection.isPothole))
     stepsCompleted.add(2);
   if (location) stepsCompleted.add(3);
   if (photoPreview && location) stepsCompleted.add(4);
@@ -659,14 +640,25 @@ export function NewReport() {
                       </div>
                     )}
                     {!detecting && detection && !detection.isPothole && (
-                      <div className="rounded-3xl border-2 border-warning/50 bg-warning/5 p-4">
-                        <p className="flex items-center gap-2 text-sm font-bold text-warning">
-                          <FaExclamationTriangle /> No pothole detected
-                        </p>
-                        <p className="mt-1 text-sm text-primary/70">
-                          Please upload another image that clearly shows the
-                          pothole.
-                        </p>
+                      <div className="space-y-3">
+                        <div className="rounded-3xl border-2 border-warning/50 bg-warning/5 p-4">
+                          <p className="flex items-center gap-2 text-sm font-bold text-warning">
+                            <FaExclamationTriangle /> No pothole detected
+                          </p>
+                          <p className="mt-1 text-sm text-primary/70">
+                            Please upload another image that clearly shows the
+                            pothole.
+                          </p>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm text-primary/80 cursor-pointer p-2 hover:bg-primary/5 rounded-lg transition">
+                          <input
+                            type="checkbox"
+                            checked={overrideAi}
+                            onChange={(e) => setOverrideAi(e.target.checked)}
+                            className="rounded border-primary/30 text-accent focus:ring-accent"
+                          />
+                          I am sure this is a pothole (bypass AI check)
+                        </label>
                       </div>
                     )}
                     {!detecting && !detection && !detectError && (
@@ -936,7 +928,7 @@ export function NewReport() {
                 size="lg"
                 loading={submitting}
                 disabled={
-                  detecting || (detection !== null && !detection.isPothole)
+                  detecting || (detection !== null && !detection.isPothole && !overrideAi)
                 }
               >
                 Submit report
