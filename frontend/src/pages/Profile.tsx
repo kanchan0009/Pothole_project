@@ -26,6 +26,7 @@ import { TextInput } from "../components/ui/Field";
 import { useToast } from "../components/ui/Toast";
 import { formatDate } from "../lib/format";
 import { passwordRule } from "../lib/validators";
+import type { User } from "../types";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(80),
@@ -146,8 +147,9 @@ export function Profile() {
   });
 
   async function saveProfile(values: ProfileValues) {
+    if (!user) return;
     try {
-      let res: { user: typeof user };
+      let res: { user: User };
       if (avatarFile) {
         const form = new FormData();
         form.append("name", values.name);

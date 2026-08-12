@@ -141,7 +141,7 @@ export function AdminReports() {
     [page, status, severity, municipality, ward, debouncedSearch, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: listQueryKey,
     queryFn: ({ queryKey }) => {
       const [, , filters] = queryKey as [
