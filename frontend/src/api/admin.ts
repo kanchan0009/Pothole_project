@@ -88,8 +88,10 @@ export const adminApi = {
     apiClient.post('/admin/priority-queue/process-next').then((r) => r as unknown as DispatchResult),
 
   /** Dijkstra route from the crew to a report (recomputed on every call). */
-  reportRoute: (id: number) =>
-    apiClient.get(`/admin/reports/${id}/route`).then((r) => r as unknown as ReportRoute),
+  reportRoute: (id: number, params?: { workerId?: number }) =>
+    apiClient
+      .get(`/admin/reports/${id}/route`, { params })
+      .then((r) => r as unknown as ReportRoute),
 
   logs: (limit = 20) =>
     apiClient.get('/admin/logs', { params: { limit } }).then((r) => r as unknown as { logs: AdminLog[] }),

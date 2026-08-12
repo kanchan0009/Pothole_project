@@ -40,6 +40,7 @@ export interface User {
   phone?: string | null;
   role: Role;
   isActive: boolean;
+  avatarUrl?: string | null;
   createdAt: string;
 }
 
@@ -245,7 +246,7 @@ export interface ReportRoute {
   reportId: number;
   route: RoutePlan;
   team: RouteTeam | null;
-  teamSource: 'assigned' | 'nearest' | null;
+  teamSource: 'assigned' | 'nearest' | 'selected' | null;
 }
 
 export interface DispatchResult {
@@ -253,7 +254,7 @@ export interface DispatchResult {
   report: ReportDetail | null;
   route: RoutePlan | null;
   team: RouteTeam | null;
-  teamSource: 'assigned' | 'nearest' | null;
+  teamSource: 'assigned' | 'nearest' | 'selected' | null;
 }
 
 export interface UserListResult {

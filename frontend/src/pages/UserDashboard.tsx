@@ -83,25 +83,55 @@ export function UserDashboard() {
     setPage(1);
   }, [status, debouncedSearch]);
 
-  const params = useMemo(
-    () => ({
-      page,
-      limit: PAGE_SIZE,
-      status: status === 'all' ? undefined : status,
-      search: debouncedSearch || undefined,
-    }),
-    [page, status, debouncedSearch]
+  const listQueryKey = useMemo(
+    () =>
+      [
+        'user',
+        'reports',
+        {
+          page,
+          limit: PAGE_SIZE,
+          status: status === 'all' ? null : status,
+          search: debouncedSearch || null,
+        },
+      ] as const,
+    [page, status, debouncedSearch],
   );
 
-  const { data, isFetching } = useQuery({
-    queryKey: ['user', 'reports', params],
-    queryFn: () => reportsApi.mine(params),
-    placeholderData: (prev) => prev,
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
+    queryKey: listQueryKey,
+    queryFn: ({ queryKey }) => {
+      const [, , filters] = queryKey as [
+        'user',
+        'reports',
+        {
+          page: number;
+          limit: number;
+          status: ReportStatus | null;
+          search: string | null;
+        },
+      ];
+      return reportsApi.mine({
+        page: filters.page,
+        limit: filters.limit,
+        status: filters.status ?? undefined,
+        search: filters.search || undefined,
+      });
+    },
   });
+
+  const reports = data?.reports ?? [];
 
   const s = stats?.status;
   const inProgress = s ? s.assigned + s.inProgress : 0;
   const totalPages = data?.pagination.totalPages ?? 1;
+  const activeTabLabel = status === 'all' ? 'All' : STATUS_META[status].label;
 
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -214,18 +244,31 @@ export function UserDashboard() {
             </div>
 
             <div className="flex-1 overflow-hidden">
-              {isFetching && !data ? (
+              {isLoading ? (
                 <div className="px-5 py-4">
                   <SkeletonRow lines={PAGE_SIZE} />
                 </div>
-              ) : (data?.reports ?? []).length === 0 ? (
+              ) : isError ? (
                 <div className="px-5 py-14 text-center">
-                  <p className="text-sm font-semibold text-primary/70">No reports yet.</p>
-                  <p className="mt-1 text-xs text-primary/50">Spot a pothole? Let the municipality know.</p>
+                  <p className="text-sm font-semibold text-primary/70">Could not load your reports</p>
+                  <p className="mt-1 text-xs text-primary/50">
+                    {error instanceof Error ? error.message : 'Please refresh and try again.'}
+                  </p>
+                </div>
+              ) : reports.length === 0 ? (
+                <div className="px-5 py-14 text-center">
+                  <p className="text-sm font-semibold text-primary/70">
+                    {status === 'all' ? 'No reports yet.' : `No ${activeTabLabel.toLowerCase()} reports.`}
+                  </p>
+                  <p className="mt-1 text-xs text-primary/50">
+                    {status === 'all'
+                      ? 'Spot a pothole? Let the municipality know.'
+                      : 'Try another status tab or submit a new report.'}
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-primary/5">
-                  {(data?.reports ?? []).map((r) => (
+                  {reports.map((r) => (
                     <button
                       key={r.id}
                       onClick={() => setSelectedId(r.id)}
@@ -269,7 +312,11 @@ export function UserDashboard() {
             {/* Pagination */}
             <div className="flex items-center justify-between border-t border-primary/5 px-5 py-4">
               <p className="text-[11px] font-semibold text-primary/40">
-                {data ? `${data.pagination.total} REPORT${data.pagination.total === 1 ? '' : 'S'}` : 'LOADING…'}
+                {isLoading
+                  ? 'LOADING…'
+                  : isError
+                    ? '—'
+                    : `${data?.pagination.total ?? reports.length} REPORT${(data?.pagination.total ?? reports.length) === 1 ? '' : 'S'}${isFetching ? ' · updating…' : ''}`}
               </p>
               <div className="flex items-center gap-1">
                 <Button size="sm" variant="outline" className="h-8 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>

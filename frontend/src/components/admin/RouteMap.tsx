@@ -75,7 +75,11 @@ export function RouteMap({ route }: { route: ReportRoute | null }) {
           <p className="text-sm font-bold text-primary">Dijkstra route</p>
           <p className="text-[11px] text-primary/50">
             Team: <span className="font-semibold text-primary">{route.team.name}</span>
-            {route.teamSource === 'assigned' ? ' (assigned)' : ' (nearest by road)'}
+            {route.teamSource === 'assigned'
+              ? ' (assigned)'
+              : route.teamSource === 'selected'
+                ? ' (selected worker)'
+                : ' (nearest by road)'}
           </p>
         </div>
         <div className="flex items-center gap-3 text-right">

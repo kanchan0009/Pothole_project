@@ -43,8 +43,22 @@ export const authApi = {
     const res = (await apiClient.get('/auth/me')) as unknown as { user: User };
     return res.user;
   },
-  updateProfile: (data: Partial<{ name: string; phone: string | null; currentPassword: string; newPassword: string }>) =>
-    put<{ user: User }>('/auth/profile', data),
+  updateProfile: (
+    data:
+      | FormData
+      | Partial<{
+          name: string;
+          phone: string | null;
+          currentPassword: string;
+          newPassword: string;
+          removeAvatar: boolean;
+        }>,
+  ) => {
+    if (data instanceof FormData) {
+      return apiClient.put('/auth/profile', data) as Promise<{ user: User }>;
+    }
+    return put<{ user: User }>('/auth/profile', data);
+  },
   deleteAccount: () => del<{ message: string }>('/auth/account'),
   forgotPassword: (email: string) => post<{ message: string }>('/auth/forgot-password', { email }),
   resetPassword: (token: string, password: string) =>

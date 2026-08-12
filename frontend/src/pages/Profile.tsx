@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -46,6 +46,37 @@ const passwordSchema = z
 type ProfileValues = z.infer<typeof profileSchema>;
 type PasswordValues = z.infer<typeof passwordSchema>;
 
+function avatarDisplaySrc(
+  user: { avatarUrl?: string | null; name: string },
+  preview: string | null,
+  removed: boolean,
+): string | null {
+  if (preview) return preview;
+  if (removed) return null;
+  return user.avatarUrl ?? null;
+}
+
+function AvatarImage({
+  src,
+  name,
+  className = "",
+}: {
+  src: string | null;
+  name: string;
+  className?: string;
+}) {
+  if (src) {
+    return (
+      <img src={src} alt="" className={`h-full w-full object-cover ${className}`} />
+    );
+  }
+  return (
+    <span className={`grid h-full w-full place-items-center ${className}`}>
+      {name.trim()[0]?.toUpperCase() ?? "?"}
+    </span>
+  );
+}
+
 export function Profile() {
   const { user, updateStoredUser, logout } = useAuth();
   const toast = useToast();
@@ -65,13 +96,29 @@ export function Profile() {
     enabled: activeTab === "reports",
   });
 
+  const { data: statsData } = useQuery({
+    queryKey: ["user", "stats"],
+    queryFn: reportsApi.mineStats,
+    enabled: activeTab === "reports",
+  });
+
   const profileForm = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { name: user?.name ?? "", phone: user?.phone ?? "" },
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const displayedAvatar = avatarDisplaySrc(user ?? { name: "", avatarUrl: null }, avatarPreview, avatarRemoved);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
   function openAvatarPicker() {
     avatarInputRef.current?.click();
@@ -81,7 +128,17 @@ export function Profile() {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
     if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(f);
     setAvatarPreview(URL.createObjectURL(f));
+    setAvatarRemoved(false);
+    e.target.value = "";
+  }
+
+  function clearAvatarSelection() {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    setAvatarRemoved(Boolean(user?.avatarUrl));
   }
 
   const passwordForm = useForm<PasswordValues>({
@@ -90,12 +147,26 @@ export function Profile() {
 
   async function saveProfile(values: ProfileValues) {
     try {
-      const res = await authApi.updateProfile({
-        name: values.name,
-        phone: values.phone || null,
-      });
+      let res: { user: typeof user };
+      if (avatarFile) {
+        const form = new FormData();
+        form.append("name", values.name);
+        form.append("phone", values.phone ?? "");
+        form.append("avatar", avatarFile);
+        res = await authApi.updateProfile(form);
+      } else {
+        res = await authApi.updateProfile({
+          name: values.name,
+          phone: values.phone || null,
+          ...(avatarRemoved ? { removeAvatar: true } : {}),
+        });
+      }
       updateStoredUser(res.user);
       profileForm.reset({ name: res.user.name, phone: res.user.phone ?? "" });
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setAvatarRemoved(false);
       toast.success("Profile updated");
     } catch (err) {
       toast.error(
@@ -157,8 +228,8 @@ export function Profile() {
         <aside className="space-y-6">
           <Card className="p-6">
             <div className="flex items-center gap-4">
-              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary text-xl font-bold text-white">
-                {user.name.trim()[0]?.toUpperCase() ?? "?"}
+              <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-xl font-bold text-white">
+                <AvatarImage src={displayedAvatar} name={user.name} />
               </span>
               <div className="min-w-0">
                 <p className="truncate text-base font-extrabold text-primary">
@@ -188,18 +259,8 @@ export function Profile() {
           <Card className="p-4">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="relative">
-                <div className="grid h-20 w-20 place-items-center rounded-full bg-primary text-3xl text-white overflow-hidden">
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="avatar"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-3xl">
-                      {user.name.trim()[0]?.toUpperCase() ?? "?"}
-                    </span>
-                  )}
+                <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-primary text-3xl text-white">
+                  <AvatarImage src={displayedAvatar} name={user.name} className="text-3xl" />
                 </div>
                 <button
                   type="button"
@@ -321,18 +382,8 @@ export function Profile() {
                   Your name appears on reports and receipts.
                 </p>
                 <div className="mt-4 flex items-center gap-4">
-                  <div className="h-16 w-16 overflow-hidden rounded-full bg-primary">
-                    {avatarPreview ? (
-                      <img
-                        src={avatarPreview}
-                        alt="avatar preview"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="grid h-full w-full place-items-center text-white text-xl">
-                        {user.name.trim()[0]?.toUpperCase() ?? "?"}
-                      </span>
-                    )}
+                  <div className="h-16 w-16 overflow-hidden rounded-full bg-primary text-white">
+                    <AvatarImage src={displayedAvatar} name={user.name} className="text-xl" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <p className="text-sm text-primary/70">Profile photo</p>
@@ -344,19 +395,21 @@ export function Profile() {
                       >
                         Choose photo
                       </button>
-                      {avatarPreview && (
+                      {(displayedAvatar || avatarFile || avatarRemoved) && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setAvatarPreview(null);
-                            
-                          }}
+                          onClick={clearAvatarSelection}
                           className="rounded-md border px-3 py-1 text-sm"
                         >
                           Remove
                         </button>
                       )}
                     </div>
+                    {(avatarFile || avatarRemoved) && (
+                      <p className="text-xs text-primary/50">
+                        Save changes to {avatarRemoved ? "remove" : "update"} your profile photo.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <form
@@ -560,7 +613,7 @@ export function Profile() {
                   </p>
                 </div>
                 <Badge tone="info">
-                  {reportsData?.pagination.total ?? 0} reports
+                  {statsData?.status.total ?? reportsData?.pagination.total ?? 0} reports
                 </Badge>
               </div>
 

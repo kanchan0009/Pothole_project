@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaBan, FaDownload, FaFlag, FaRoad, FaTrash } from 'react-icons/fa';
 import { reportsApi } from '../../api/reports';
 import { useAuth } from '../../features/auth/auth-context';
 import { SEVERITY_META, STATUS_META } from '../../lib/constants';
 import { formatCoords, formatDateTime } from '../../lib/format';
+import { canUserDeleteReport } from '../../lib/reportActions';
 import { reportRef } from '../../lib/receipt';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -32,6 +33,12 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
   });
 
   const report = data?.report;
+  const isOwner = report?.userId === user?.id;
+  const canRemove = report ? canUserDeleteReport(report.status) : false;
+
+  useEffect(() => {
+    setConfirmRemove(false);
+  }, [reportId]);
 
   async function handleReceipt() {
     if (!report) return;
@@ -43,7 +50,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
     }
   }
 
-  /** Owner-only cleanup of a completed report — hides it from this dashboard. */
+  /** Owner-only — permanently deletes this report from the system. */
   async function handleRemove() {
     if (!report) return;
     setRemoving(true);
@@ -51,10 +58,10 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
       await reportsApi.removeForUser(report.id);
       queryClient.invalidateQueries({ queryKey: ['user', 'reports'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
-      toast.success('The completed report has been removed from your dashboard.');
+      toast.success('Report deleted permanently.');
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not remove the report');
+      toast.error(err instanceof Error ? err.message : 'Could not delete the report');
     } finally {
       setRemoving(false);
     }
@@ -205,42 +212,51 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </Card>
                   )}
 
-                  {/* Actions */}
+                  {/* Receipt download */}
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white p-4">
                     <div>
-                      <p className="text-sm font-bold text-primary">Track this report</p>
-                      <p className="text-xs text-primary/50">Save or share an official PDF receipt.</p>
+                      <p className="text-sm font-bold text-primary">Official report receipt</p>
+                      <p className="text-xs text-primary/50">
+                        Download a PDF with photos, status history, and reference {reportRef(report.id)}.
+                      </p>
                     </div>
                     <Button size="sm" onClick={handleReceipt}>
                       <FaDownload /> Download receipt
                     </Button>
                   </div>
 
-                  {/* Remove completed report (owner only) */}
-                  {report.status === 'COMPLETED' && report.userId === user?.id && (
-                    <div className="rounded-xl border border-danger/20 bg-white p-4">
+                  {/* Permanent delete (owner only) */}
+                  {isOwner && (
+                    <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
                       {!confirmRemove ? (
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm font-bold text-danger">Remove from my dashboard</p>
+                            <p className="text-sm font-bold text-danger">Delete this report</p>
                             <p className="text-xs text-primary/50">
-                              This completed report is no longer needed in your history.
+                              Permanently removes it from your dashboard, the admin panel, and the database.
                             </p>
                           </div>
-                          <Button size="sm" variant="danger" onClick={() => setConfirmRemove(true)}>
-                            <FaTrash /> Remove
-                          </Button>
+                          {canRemove ? (
+                            <Button size="sm" variant="danger" onClick={() => setConfirmRemove(true)}>
+                              <FaTrash /> Delete report
+                            </Button>
+                          ) : (
+                            <p className="text-xs font-medium text-primary/60">
+                              Cannot delete while work is {STATUS_META[report.status].label.toLowerCase()}.
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          <p className="text-sm font-bold text-primary">Remove this completed report?</p>
-                          <p className="text-xs text-primary/60">
-                            This only removes it from your dashboard — the maintenance team and other
-                            users are unaffected.
+                          <p className="text-sm font-bold text-primary">
+                            Permanently delete {reportRef(report.id)}?
                           </p>
-                          <div className="flex gap-2">
+                          <p className="text-xs text-primary/60">
+                            This cannot be undone. Download the receipt first if you need a copy.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
                             <Button size="sm" variant="danger" loading={removing} onClick={handleRemove}>
-                              Yes, remove
+                              Yes, delete permanently
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => setConfirmRemove(false)}>
                               Cancel

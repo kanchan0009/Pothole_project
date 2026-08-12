@@ -89,8 +89,9 @@ export const reportsApi = {
   /** Step-2 AI gate — detect a pothole in the chosen photo before the form proceeds. */
   detect: async (file: File) => {
     const form = new FormData();
-    form.append('image', file);
-    return (await apiClient.post('/reports/detect', form)) as unknown as DetectionResult;
+    const name = file.name?.trim() || "photo.jpg";
+    form.append("image", file, name.endsWith(".") ? "photo.jpg" : name);
+    return (await apiClient.post("/reports/detect", form)) as unknown as DetectionResult;
   },
 
   async create(form: FormData): Promise<CreateReportResult> {
@@ -111,6 +112,6 @@ export const reportsApi = {
 
   remove: (id: number) => apiClient.delete(`/reports/${id}`),
 
-  /** Hide a COMPLETED report from the caller's own dashboard only (owner-only). */
+  /** Permanently deletes the caller's report (owner-only). */
   removeForUser: (id: number) => apiClient.post(`/reports/${id}/remove-user`),
 };

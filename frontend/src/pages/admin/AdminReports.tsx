@@ -122,24 +122,53 @@ export function AdminReports() {
     setPage(1);
   }, [debouncedSearch, status, severity, municipality, ward, sort]);
 
-  const params = useMemo<AdminReportParams>(
-    () => ({
-      page,
-      limit: PAGE_SIZE,
-      status: status || undefined,
-      severity: severity || undefined,
-      municipality: municipality || undefined,
-      ward: ward || undefined,
-      search: debouncedSearch || undefined,
-      sort,
-    }),
+  const listQueryKey = useMemo(
+    () =>
+      [
+        "admin",
+        "reports",
+        {
+          page,
+          limit: PAGE_SIZE,
+          status: status || null,
+          severity: severity || null,
+          municipality: municipality || null,
+          ward: ward || null,
+          search: debouncedSearch || null,
+          sort,
+        },
+      ] as const,
     [page, status, severity, municipality, ward, debouncedSearch, sort],
   );
 
-  const { data, isFetching } = useQuery({
-    queryKey: ["admin", "reports", params],
-    queryFn: () => adminApi.reports(params),
-    placeholderData: (prev) => prev,
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: listQueryKey,
+    queryFn: ({ queryKey }) => {
+      const [, , filters] = queryKey as [
+        "admin",
+        "reports",
+        {
+          page: number;
+          limit: number;
+          status: ReportStatus | null;
+          severity: Severity | null;
+          municipality: string | null;
+          ward: string | null;
+          search: string | null;
+          sort: NonNullable<AdminReportParams["sort"]>;
+        },
+      ];
+      return adminApi.reports({
+        page: filters.page,
+        limit: filters.limit,
+        status: filters.status ?? undefined,
+        severity: filters.severity ?? undefined,
+        municipality: filters.municipality || undefined,
+        ward: filters.ward || undefined,
+        search: filters.search || undefined,
+        sort: filters.sort,
+      });
+    },
   });
 
   const selectClass = "input-field h-10 min-w-0 cursor-pointer pr-8 text-sm";
@@ -164,6 +193,7 @@ export function AdminReports() {
   }
 
   const totalPages = data?.pagination.totalPages ?? 1;
+  const reports = data?.reports ?? [];
 
   return (
     <motion.div
@@ -306,7 +336,7 @@ export function AdminReports() {
               </tr>
             </thead>
             <tbody>
-              {isFetching && !data ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={6}>
                     <div className="px-5 py-4">
@@ -314,8 +344,14 @@ export function AdminReports() {
                     </div>
                   </td>
                 </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-primary/60">
+                    {error instanceof Error ? error.message : "Could not load reports."}
+                  </td>
+                </tr>
               ) : (
-                (data?.reports ?? []).map((r) => (
+                reports.map((r) => (
                   <Row
                     key={r.id}
                     report={r}
@@ -327,7 +363,7 @@ export function AdminReports() {
           </table>
         </div>
 
-        {data && data.reports.length === 0 && (
+        {!isLoading && !isError && reports.length === 0 && (
           <p className="py-12 text-center text-sm text-primary/50">
             No reports match these filters.
           </p>

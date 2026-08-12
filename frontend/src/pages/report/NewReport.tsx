@@ -10,6 +10,7 @@ import {
   FaMapMarkerAlt,
   FaRobot,
   FaRoute,
+  FaTrash,
 } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +36,12 @@ import {
 } from "../../lib/mapCapture";
 import { reportRef } from "../../lib/receipt";
 import { SEVERITY_META, STATUS_META } from "../../lib/constants";
+import {
+  canvasToJpegFile,
+  MAX_PHOTO_BYTES,
+  normalizePhotoFile,
+  PHOTO_ACCEPT,
+} from "../../lib/photoFile";
 import type { DetectionResult, MapCaptureDraft, Report } from "../../types";
 
 const schema = z.object({
@@ -67,9 +74,6 @@ const SEVERITY_OPTIONS: Array<{
     { value: "CRITICAL", label: "Critical — hazard / blocks traffic" },
   ];
 
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-
 export function NewReport() {
   const toast = useToast();
   const navigate = useNavigate();
@@ -101,6 +105,8 @@ export function NewReport() {
   const [submitting, setSubmitting] = useState(false);
   const [duplicateWarn, setDuplicateWarn] = useState<NearbyReport | null>(null);
   const [created, setCreated] = useState<Report | null>(null);
+  const [confirmRemoveSuccess, setConfirmRemoveSuccess] = useState(false);
+  const [removingSuccess, setRemovingSuccess] = useState(false);
   /** 'map' when the report photo/location came from the map page's capture. */
   const [source, setSource] = useState<"manual" | "map">("manual");
 
@@ -114,6 +120,8 @@ export function NewReport() {
   const searchAbortRef = useRef<AbortController | null>(null);
 
   const [overrideAi, setOverrideAi] = useState(false);
+  /** Ignores stale /api/reports/detect responses when the photo changes quickly (e.g. camera after upload). */
+  const detectSeqRef = useRef(0);
 
   // Consume a capture handed over by the map page. Stored in sessionStorage so
   // it survives a login redirect; cleared once applied;
@@ -125,36 +133,88 @@ export function NewReport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
+  function applyPhotoFile(file: File) {
+    const normalized = normalizePhotoFile(file);
+    if (!normalized) {
       toast.error("Only JPG, PNG or WEBP photos are supported");
-      e.target.value = "";
       return;
     }
-    if (file.size > MAX_PHOTO_BYTES) {
+    if (normalized.size > MAX_PHOTO_BYTES) {
       toast.error("Photo must be 5 MB or smaller");
-      e.target.value = "";
       return;
     }
     if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhoto(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    detectSeqRef.current += 1;
+    setDetection(null);
+    setDetectError(null);
+    setOverrideAi(false);
+    setPhoto(normalized);
+    setPhotoPreview(URL.createObjectURL(normalized));
     setSource("manual");
-    void runDetection(file);
+    void runDetection(normalized);
+  }
+
+  function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    applyPhotoFile(file);
   }
 
   function capturePhoto() {
-    stopCamera();
-    setCameraError(null);
-    if (cameraInputRef.current) {
-      cameraInputRef.current.click();
-    }
+    void startCamera();
   }
 
   function uploadPhoto() {
     uploadInputRef.current?.click();
+  }
+
+  /** Opens the device camera for a live preview (preferred on mobile + desktop). */
+  async function startCamera() {
+    setCameraError(null);
+    detectSeqRef.current += 1;
+    setDetection(null);
+    setDetectError(null);
+    setDetecting(false);
+    setOverrideAi(false);
+
+    if (!window.isSecureContext) {
+      setCameraError(
+        "Camera access requires HTTPS. Use Upload image instead, or open the site via https:// or localhost.",
+      );
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Live camera is not supported here — opening your device camera app instead.");
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    stopCamera();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      setCameraStream(stream);
+    } catch (err) {
+      const denied =
+        err instanceof DOMException &&
+        (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
+      setCameraError(
+        denied
+          ? "Camera permission denied. Allow camera access in your browser, or upload a photo instead."
+          : "Could not open the camera. Trying your device camera app instead.",
+      );
+      cameraInputRef.current?.click();
+    }
   }
 
   function clearPhoto() {
@@ -170,32 +230,44 @@ export function NewReport() {
   async function takeSnapshot() {
     if (!videoRef.current) return;
     const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) {
+      toast.error("Camera is still starting — wait a moment and try again");
+      return;
+    }
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const file = new File([blob], "camera-capture.jpg", {
-        type: "image/jpeg",
-      });
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
-      setPhoto(file);
-      setPhotoPreview(URL.createObjectURL(file));
-      setSource("manual");
-      stopCamera();
-      void runDetection(file);
-    }, "image/jpeg");
+    stopCamera();
+    const file = await canvasToJpegFile(canvas);
+    if (!file) {
+      toast.error("Could not save the camera photo — try again or upload instead");
+      return;
+    }
+    applyPhotoFile(file);
   }
 
   function stopCamera() {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      setCameraStream(null);
-    }
+    setCameraStream((current) => {
+      current?.getTracks().forEach((track) => track.stop());
+      return null;
+    });
   }
+
+  // Pipe the MediaStream into the <video> element once the preview mounts.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !cameraStream) return;
+    video.srcObject = cameraStream;
+    void video.play().catch(() => {
+      setCameraError("Could not start the camera preview.");
+    });
+    return () => {
+      video.srcObject = null;
+    };
+  }, [cameraStream]);
 
   useEffect(() => {
     return () => {
@@ -235,18 +307,22 @@ export function NewReport() {
 
   /** Step-2 AI gate — server-side detection; submission is blocked without a hit. */
   async function runDetection(file: File) {
+    const seq = detectSeqRef.current;
     setDetecting(true);
     setDetection(null);
     setDetectError(null);
     setOverrideAi(false);
     try {
-      setDetection(await reportsApi.detect(file));
+      const result = await reportsApi.detect(file);
+      if (seq !== detectSeqRef.current) return;
+      setDetection(result);
     } catch (err) {
+      if (seq !== detectSeqRef.current) return;
       setDetectError(
         err instanceof Error ? err.message : "AI detection failed",
       );
     } finally {
-      setDetecting(false);
+      if (seq === detectSeqRef.current) setDetecting(false);
     }
   }
 
@@ -349,6 +425,22 @@ export function NewReport() {
   const onContinueDuplicate = () => void doSubmit(true);
   const onCancelDuplicate = () => setDuplicateWarn(null);
 
+  async function handleDeleteReport() {
+    if (!created) return;
+    setRemovingSuccess(true);
+    try {
+      await reportsApi.removeForUser(created.id);
+      toast.success("Report deleted permanently.");
+      navigate("/dashboard");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete the report",
+      );
+    } finally {
+      setRemovingSuccess(false);
+    }
+  }
+
   const stepsCompleted = new Set<number>();
   if (photoPreview) stepsCompleted.add(1);
   if (source === "map" || overrideAi || (detection && detection.isPothole))
@@ -407,20 +499,42 @@ export function NewReport() {
                 />
               </dl>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
                 <Button onClick={() => void reportsApi.receipt(created.id)}>
                   <FaDownload /> Download receipt
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/dashboard")}
-                >
+                {!confirmRemoveSuccess ? (
+                  <Button variant="danger" onClick={() => setConfirmRemoveSuccess(true)}>
+                    <FaTrash /> Delete report
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="danger"
+                      loading={removingSuccess}
+                      onClick={() => void handleDeleteReport()}
+                    >
+                      Yes, delete permanently
+                    </Button>
+                    <Button variant="ghost" onClick={() => setConfirmRemoveSuccess(false)}>
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+              {confirmRemoveSuccess && (
+                <p className="mt-4 text-center text-xs text-primary/60">
+                  This permanently deletes {reportRef(created.id)} from your account, admin lists, and the
+                  database. Download the receipt first if you need a copy.
+                </p>
+              )}
+              <div className="mt-4 flex justify-center">
+                <Button variant="outline" onClick={() => navigate("/dashboard")}>
                   Go to my dashboard
                 </Button>
               </div>
-              <p className="mt-5 text-xs text-primary/50 text-center">
-                You can track status updates and history for this report from
-                your dashboard.
+              <p className="mt-5 text-center text-xs text-primary/50">
+                You can track status updates and history for this report from your dashboard.
               </p>
             </div>
           </motion.div>
@@ -555,7 +669,7 @@ export function NewReport() {
                     <input
                       ref={cameraInputRef}
                       type="file"
-                      accept="image/*"
+                      accept={PHOTO_ACCEPT}
                       capture="environment"
                       className="hidden"
                       onChange={handlePhoto}
@@ -563,7 +677,7 @@ export function NewReport() {
                     <input
                       ref={uploadInputRef}
                       type="file"
-                      accept="image/*"
+                      accept={PHOTO_ACCEPT}
                       className="hidden"
                       onChange={handlePhoto}
                     />

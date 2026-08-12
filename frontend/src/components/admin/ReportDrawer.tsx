@@ -87,11 +87,18 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
 
   const report = data?.report;
 
-  // Dijkstra route crew → pothole, computed live so it recalculates when the
-  // assigned worker's coordinates change.
+  /** When picking a worker manually, preview the Dijkstra route to that crew. */
+  const previewWorkerId =
+    action === "assign" && workerId !== "" ? Number(workerId) : undefined;
+
+  // Dijkstra route crew → pothole, recomputed when the assigned or selected worker changes.
   const { data: routeData } = useQuery({
-    queryKey: ["admin", "report-route", reportId],
-    queryFn: () => adminApi.reportRoute(reportId!),
+    queryKey: ["admin", "report-route", reportId, previewWorkerId ?? "default"],
+    queryFn: () =>
+      adminApi.reportRoute(
+        reportId!,
+        previewWorkerId ? { workerId: previewWorkerId } : undefined,
+      ),
     enabled: !!reportId && !!report?.latitude && !!report?.longitude,
   });
 
@@ -113,6 +120,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
     queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     queryClient.invalidateQueries({ queryKey: ["admin", "statistics"] });
     queryClient.invalidateQueries({ queryKey: ["admin", "report", reportId] });
+    queryClient.invalidateQueries({ queryKey: ["admin", "report-route", reportId] });
   };
 
   async function submitAction() {
