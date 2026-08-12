@@ -283,8 +283,6 @@ async function loadImageForPdf(source: string): Promise<Buffer | null> {
 export async function buildReceiptPdf(data: ReceiptData): Promise<Buffer> {
   const before = await loadImageForPdf(data.imageUrl);
   const after = data.completionImageUrl ? await loadImageForPdf(data.completionImageUrl) : null;
-  const beforeMeta = before ? await sharp(before).metadata() : null;
-  const afterMeta = after ? await sharp(after).metadata() : null;
 
   return new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: 0 });
@@ -294,115 +292,229 @@ export async function buildReceiptPdf(data: ReceiptData): Promise<Buffer> {
     doc.on('error', reject);
 
     const W = doc.page.width;
+    const H = doc.page.height;
     const M = 48;
     const CW = W - M * 2;
+    const FOOTER_H = 52;
+    const pageBottom = () => H - FOOTER_H;
+    let pageIndex = 0;
     let y = 0;
 
-    // ---- Header band ----
-    doc.rect(0, 0, W, 68).fill('#0B1F3A');
-    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('RoadGuard', M, 14);
-    doc.font('Helvetica').fontSize(9.5).text('Smart Pothole Detection & Reporting System', M, 34);
-    doc.font('Helvetica-Bold').fontSize(11).text('OFFICIAL REPORT RECEIPT', W - M - 210, 16, { width: 210, align: 'right' });
-    doc.font('Helvetica').fontSize(8.5).text(`${data.ref}  ·  ${new Date().toLocaleString()}`, W - M - 210, 32, { width: 210, align: 'right' });
+    const formatWhen = (iso: string) =>
+      new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
-    y = 86;
+    const drawFooter = () => {
+      const fy = H - FOOTER_H;
+      doc.rect(0, fy, W, FOOTER_H).fill('#0B1F3A');
+      doc.fillColor('#FFFFFF').font('Helvetica').fontSize(8).text('Municipal Road Division · roadguard.gov.np', M, fy + 10);
+      doc.font('Helvetica-Bold').fontSize(8).text(data.ref, M, fy + 24, { width: CW, align: 'right' });
+      doc
+        .font('Helvetica')
+        .fontSize(7.5)
+        .text(`Generated ${new Date().toLocaleString()} — keep this receipt to track your report.`, M, fy + 36, {
+          width: CW,
+        });
+    };
+
+    const drawMainHeader = () => {
+      doc.rect(0, 0, W, 76).fill('#0B1F3A');
+      doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(22).text('RoadGuard', M, 18);
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text('Smart Pothole Detection & Reporting System', M, 44, { width: CW * 0.52 });
+
+      const boxX = M + CW * 0.56;
+      const boxW = CW * 0.44;
+      doc.roundedRect(boxX, 14, boxW, 48, 5).fill('#153B6B');
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .text('OFFICIAL REPORT RECEIPT', boxX + 12, 22, { width: boxW - 24, align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(8.5).text(data.ref, boxX + 12, 36, { width: boxW - 24, align: 'right' });
+      doc
+        .font('Helvetica')
+        .fontSize(7.5)
+        .text(formatWhen(data.createdAt), boxX + 12, 50, { width: boxW - 24, align: 'right' });
+    };
+
+    const drawContinuedHeader = () => {
+      doc.rect(0, 0, W, 40).fill('#0B1F3A');
+      doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(10).text(`RoadGuard · ${data.ref}`, M, 14);
+      doc
+        .font('Helvetica')
+        .fontSize(8)
+        .text('Report receipt (continued)', W - M - 160, 16, { width: 160, align: 'right' });
+    };
+
+    const startPage = (continued: boolean) => {
+      if (pageIndex > 0) {
+        drawFooter();
+        doc.addPage();
+      }
+      pageIndex += 1;
+      if (continued) {
+        drawContinuedHeader();
+        y = 52;
+      } else {
+        drawMainHeader();
+        y = 92;
+      }
+    };
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed > pageBottom()) startPage(true);
+    };
+
+    startPage(false);
 
     // ---- Report identity ----
-    doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(16).text(data.title, M, y, { width: CW });
-    y += 24;
+    doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(15).text(data.title, M, y, { width: CW });
+    y += doc.heightOfString(data.title, { width: CW }) + 8;
+
     if (data.description) {
-      doc.fillColor('#444444').font('Helvetica').fontSize(9.5).text(data.description, M, y, { width: CW });
-      y += doc.heightOfString(data.description, { width: CW }) + 10;
+      doc.fillColor('#475569').font('Helvetica').fontSize(9).text(data.description, M, y, { width: CW });
+      y += doc.heightOfString(data.description, { width: CW }) + 14;
     }
 
-    // Status + severity chips.
-    drawChip(doc, M, y, 'Status', STATUS_LABEL[data.status], STATUS_COLOR[data.status]);
-    drawChip(doc, M + 140, y, 'Severity', SEVERITY_LABEL[data.severity], SEVERITY_COLOR[data.severity]);
-    y += 42;
+    // Summary strip — reference + key dates.
+    ensureSpace(36);
+    const stripH = 32;
+    doc.roundedRect(M, y, CW, stripH, 4).fill('#F8FAFC');
+    doc.rect(M, y, 3, stripH).fill('#00B4D8');
+    const stripCols = [
+      ['Reference', data.ref],
+      ['Submitted', formatWhen(data.createdAt)],
+      ['Last updated', formatWhen(data.updatedAt)],
+    ];
+    const stripColW = CW / stripCols.length;
+    stripCols.forEach(([label, value], i) => {
+      const x = M + 12 + i * stripColW;
+      doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(6.5).text(label.toUpperCase(), x, y + 7, { width: stripColW - 16 });
+      doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(8.5).text(value, x, y + 17, { width: stripColW - 16 });
+    });
+    y += stripH + 16;
 
-    // ---- Location / details ----
+    // Status + severity chips (equal columns).
+    ensureSpace(40);
+    const chipW = (CW - 16) / 2;
+    drawChip(doc, M, y, 'Status', STATUS_LABEL[data.status], STATUS_COLOR[data.status], chipW);
+    drawChip(doc, M + chipW + 16, y, 'Severity', SEVERITY_LABEL[data.severity], SEVERITY_COLOR[data.severity], chipW);
+    y += 40;
+
+    // ---- Location / details (two-column grid, dynamic row heights) ----
+    ensureSpace(48);
     y = sectionTitle(doc, 'Location & details', M, CW, y);
-    const details: [string, string][] = [
+    const leftDetails: [string, string][] = [
       ['Road', data.roadName],
       ['Municipality', data.municipality],
       ['Ward', data.ward],
       ['Landmark', data.landmark || '—'],
-      ['Coordinates', data.latitude != null && data.longitude != null ? `${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}` : '—'],
+    ];
+    const rightDetails: [string, string][] = [
+      [
+        'Coordinates',
+        data.latitude != null && data.longitude != null
+          ? `${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`
+          : '—',
+      ],
       ['Reporter', data.reporterName || '—'],
       ['Priority score', String(data.priorityScore)],
       ['Flagged duplicate', data.duplicate ? 'Yes' : 'No'],
     ];
-    const half = Math.ceil(details.length / 2);
-    const colW = (CW - 24) / 2;
-    details.forEach(([key, value], i) => {
-      const col = i < half ? 0 : 1;
-      const idx = i < half ? i : i - half;
-      const x = M + col * (colW + 24);
-      const rowY = y + idx * 17;
-      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#0B1F3A').text(key.toUpperCase(), x, rowY, { width: colW });
-      doc.font('Helvetica').fontSize(9.5).fillColor('#333333').text(value, x + 96, rowY, { width: colW - 96 });
-    });
-    y += half * 17 + 8;
+    const colW = (CW - 20) / 2;
+    const labelW = 78;
+    const rowCount = Math.max(leftDetails.length, rightDetails.length);
+    for (let i = 0; i < rowCount; i++) {
+      ensureSpace(22);
+      const left = leftDetails[i];
+      const right = rightDetails[i];
+      const leftH = left ? measureDetailRow(doc, left[0], left[1], colW, labelW) : 0;
+      const rightH = right ? measureDetailRow(doc, right[0], right[1], colW, labelW) : 0;
+      const rowH = Math.max(leftH, rightH, 14);
+      if (left) drawDetailRow(doc, M, y, left[0], left[1], colW, labelW, rowH);
+      if (right) drawDetailRow(doc, M + colW + 20, y, right[0], right[1], colW, labelW, rowH);
+      y += rowH + 6;
+    }
+    y += 6;
 
-    // ---- Timeline ----
+    // ---- Timeline (stacked — no overlapping columns) ----
+    ensureSpace(40);
     y = sectionTitle(doc, 'Status timeline', M, CW, y);
     if (data.history.length === 0) {
-      doc.font('Helvetica').fontSize(9).fillColor('#888888').text('No status changes recorded.', M, y);
-      y += 18;
+      doc.font('Helvetica').fontSize(9).fillColor('#94A3B8').text('No status changes recorded.', M, y);
+      y += 20;
     } else {
       for (const h of data.history) {
-        doc.circle(M + 4, y + 4, 3.5).fill(STATUS_COLOR[h.status] ?? '#888888');
-        doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(9).text(STATUS_LABEL[h.status] ?? h.status, M + 14, y);
-        doc.font('Helvetica').fontSize(8).fillColor('#666666').text(
-          `${h.updatedBy ?? 'System'} · ${new Date(h.createdAt).toLocaleString()}`,
-          M + 170, y, { width: CW - 190 }
-        );
+        const remarksH = h.remarks ? doc.heightOfString(h.remarks, { width: CW - 28 }) + 6 : 0;
+        ensureSpace(28 + remarksH);
+        const dotY = y + 6;
+        doc.circle(M + 6, dotY, 4).fill(STATUS_COLOR[h.status] ?? '#94A3B8');
+        doc
+          .fillColor('#0B1F3A')
+          .font('Helvetica-Bold')
+          .fontSize(9.5)
+          .text(STATUS_LABEL[h.status] ?? h.status, M + 20, y, { width: CW - 28 });
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#64748B')
+          .text(`${h.updatedBy ?? 'System'} · ${formatWhen(h.createdAt)}`, M + 20, y + 13, { width: CW - 28 });
         if (h.remarks) {
-          doc.font('Helvetica-Oblique').fontSize(8.5).fillColor('#555555').text(h.remarks, M + 14, y + 12, { width: CW - 20 });
-          y += 12 + doc.heightOfString(h.remarks, { width: CW - 20 }) + 8;
+          doc
+            .font('Helvetica-Oblique')
+            .fontSize(8.5)
+            .fillColor('#475569')
+            .text(h.remarks, M + 20, y + 26, { width: CW - 28 });
+          y += 26 + remarksH + 10;
         } else {
-          y += 18;
+          y += 34;
         }
       }
     }
 
-    // ---- Photographic evidence ----
+    // ---- Photographic evidence (equal-height boxes, images fitted inside) ----
+    const photoH = 132;
+    ensureSpace(photoH + 36);
     y = sectionTitle(doc, 'Photographic evidence', M, CW, y);
-    const photoW = (CW - 20) / 2;
-    const photoTop = y + 12;
-    doc.font('Helvetica-Bold').fontSize(8).fillColor('#0B1F3A').text('BEFORE REPAIR', M, y, { width: photoW });
-    const beforeH = displayHeight(beforeMeta, photoW);
-    drawPhotoBox(doc, before, M, photoTop, photoW, beforeH, 'Photo unavailable');
-    doc.text('AFTER REPAIR', M + photoW + 20, y, { width: photoW });
-    const afterH = displayHeight(afterMeta, photoW);
-    drawPhotoBox(doc, after, M + photoW + 20, photoTop, photoW, afterH, data.status === 'COMPLETED' ? 'No completion photo attached' : 'Awaiting repair');
-    y += Math.max(beforeH, afterH, 120) + 12;
+    const photoW = (CW - 16) / 2;
+    const photoTop = y + 14;
+    doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748B').text('BEFORE REPAIR', M, y, { width: photoW });
+    doc.text('AFTER REPAIR', M + photoW + 16, y, { width: photoW });
+    drawPhotoBox(doc, before, M, photoTop, photoW, photoH, 'Photo unavailable');
+    drawPhotoBox(
+      doc,
+      after,
+      M + photoW + 16,
+      photoTop,
+      photoW,
+      photoH,
+      data.status === 'COMPLETED' ? 'No completion photo attached' : 'Awaiting repair'
+    );
+    y = photoTop + photoH + 16;
 
     // ---- Rejection reason ----
     if (data.status === Status.REJECTED && data.rejectionReason) {
+      ensureSpace(48);
       y = sectionTitle(doc, 'Rejection reason', M, CW, y);
-      doc.font('Helvetica').fontSize(9).fillColor('#B91C1C').text(data.rejectionReason, M, y, { width: CW });
+      doc.roundedRect(M, y, CW, doc.heightOfString(data.rejectionReason, { width: CW - 24 }) + 16, 4).fill('#FEF2F2');
+      doc.font('Helvetica').fontSize(9).fillColor('#B91C1C').text(data.rejectionReason, M + 12, y + 8, { width: CW - 24 });
+      y += doc.heightOfString(data.rejectionReason, { width: CW - 24 }) + 24;
     }
 
-    // ---- Footer band ----
-    doc.rect(0, doc.page.height - 40, W, 40).fill('#0B1F3A');
-    doc.fillColor('#FFFFFF').font('Helvetica').fontSize(8)
-      .text('Municipal Road Division · roadguard.gov.np', M, doc.page.height - 28);
-    doc.font('Helvetica-Bold').fontSize(8)
-      .text(data.ref, W - M, doc.page.height - 28, { width: 200, align: 'right' });
-    doc.font('Helvetica').fontSize(7.5)
-      .text(`Generated ${new Date().toLocaleString()} — keep this receipt to track your report.`, M, doc.page.height - 16);
-
+    drawFooter();
     doc.end();
   });
 }
 
 /** Accent-underlined section heading; returns the y where content starts. */
 function sectionTitle(doc: PDFKit.PDFDocument, title: string, margin: number, width: number, y: number): number {
-  const top = y + 10;
-  doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(11).text(title.toUpperCase(), margin, top);
-  doc.moveTo(margin, top + 5).lineTo(margin + width, top + 5).lineWidth(1.2).strokeColor('#00B4D8').stroke();
-  return top + 14;
+  const top = y + 6;
+  doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), margin, top, { width });
+  const textH = doc.heightOfString(title.toUpperCase(), { width });
+  const lineY = top + textH + 5;
+  doc.moveTo(margin, lineY).lineTo(margin + width, lineY).lineWidth(1).strokeColor('#00B4D8').stroke();
+  return lineY + 12;
 }
 
 /** Small labelled badge (status / severity). */
@@ -412,20 +524,50 @@ function drawChip(
   y: number,
   label: string,
   value: string,
-  color: string
+  color: string,
+  width = 118
 ): void {
-  const w = 118;
-  const h = 30;
-  doc.roundedRect(x, y, w, h, 6).fill('#F1F4F8');
-  doc.fillColor('#0B1F3A').font('Helvetica-Bold').fontSize(7).text(label.toUpperCase(), x + 10, y + 5, { width: w - 20 });
-  doc.fillColor(color).font('Helvetica-Bold').fontSize(10).text(value, x + 10, y + 13, { width: w - 20 });
+  const h = 34;
+  doc.roundedRect(x, y, width, h, 6).fill('#F1F4F8');
+  doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(7).text(label.toUpperCase(), x + 10, y + 6, { width: width - 20 });
+  doc.fillColor(color).font('Helvetica-Bold').fontSize(10).text(value, x + 10, y + 18, { width: width - 20 });
 }
 
-/** Display height (pt) for a photo at the given width, capped to keep the page sane. */
-function displayHeight(meta: sharp.Metadata | null, width: number): number {
-  if (!meta?.width) return 120;
-  const h = width * ((meta.height ?? 1) / meta.width);
-  return Math.min(Math.max(h, 60), 320);
+function measureDetailRow(
+  doc: PDFKit.PDFDocument,
+  label: string,
+  value: string,
+  colW: number,
+  labelW: number
+): number {
+  const valueW = colW - labelW - 8;
+  doc.font('Helvetica-Bold').fontSize(7.5);
+  const labelH = doc.heightOfString(label.toUpperCase(), { width: labelW });
+  doc.font('Helvetica').fontSize(9);
+  const valueH = doc.heightOfString(value, { width: valueW });
+  return Math.max(labelH, valueH, 12);
+}
+
+function drawDetailRow(
+  doc: PDFKit.PDFDocument,
+  x: number,
+  y: number,
+  label: string,
+  value: string,
+  colW: number,
+  labelW: number,
+  rowH: number
+): void {
+  const valueW = colW - labelW - 8;
+  const valueX = x + labelW + 8;
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748B').text(label.toUpperCase(), x, y + 1, { width: labelW });
+  doc.font('Helvetica').fontSize(9).fillColor('#1E293B').text(value, valueX, y + 1, { width: valueW });
+  doc
+    .moveTo(x, y + rowH + 2)
+    .lineTo(x + colW, y + rowH + 2)
+    .lineWidth(0.5)
+    .strokeColor('#E2E8F0')
+    .stroke();
 }
 
 /** Draws the image (or a placeholder) inside a light-bordered box. */
@@ -438,11 +580,14 @@ function drawPhotoBox(
   h: number,
   placeholderText: string
 ): void {
-  doc.rect(x, y, w, h).lineWidth(0.6).strokeColor('#CBD5E1').stroke();
+  doc.roundedRect(x, y, w, h, 4).fill('#F8FAFC');
   if (buf) {
-    doc.image(buf, x, y, { width: w });
+    doc.save();
+    doc.roundedRect(x + 1, y + 1, w - 2, h - 2, 3).clip();
+    doc.image(buf, x + 1, y + 1, { fit: [w - 2, h - 2], align: 'center', valign: 'center' });
+    doc.restore();
   } else {
-    doc.rect(x, y, w, h).fill('#F1F4F8');
-    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8).text(placeholderText, x, y + h / 2 - 5, { align: 'center', width: w });
+    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8).text(placeholderText, x, y + h / 2 - 6, { align: 'center', width: w });
   }
+  doc.roundedRect(x, y, w, h, 4).lineWidth(0.75).strokeColor('#CBD5E1').stroke();
 }

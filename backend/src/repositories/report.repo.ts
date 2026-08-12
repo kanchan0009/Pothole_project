@@ -127,9 +127,10 @@ export const reportRepo = {
     });
   },
 
-  /** Per-status counts for one citizen's reports — powers the dashboard summary cards. */
+  /** Per-status counts for one citizen's reports — powers the dashboard summary cards.
+   *  Counts every report the user submitted, including ones they hid from their list. */
   async statusCountsForUser(userId: number): Promise<StatusCounts> {
-    const where = { userId, userHidden: false };
+    const where = { userId };
     const [total, byStatus] = await Promise.all([
       prisma.report.count({ where }),
       prisma.report.groupBy({

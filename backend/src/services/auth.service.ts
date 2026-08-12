@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { Role, User } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
+import { processAvatarImage, storeImage } from '../algorithms/image.js';
 import { userRepo } from '../repositories/user.repo.js';
 import { prisma } from '../config/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -22,7 +23,10 @@ export interface AuthResult {
   user: PublicUser;
 }
 
-export type PublicUser = Pick<User, 'id' | 'name' | 'email' | 'phone' | 'role' | 'isActive' | 'createdAt'>;
+export type PublicUser = Pick<
+  User,
+  'id' | 'name' | 'email' | 'phone' | 'role' | 'isActive' | 'avatarUrl' | 'createdAt'
+>;
 
 /** Removes sensitive fields before returning a user to the client. */
 export function toPublicUser(user: User): PublicUser {
@@ -33,6 +37,7 @@ export function toPublicUser(user: User): PublicUser {
     phone: user.phone,
     role: user.role,
     isActive: user.isActive,
+    avatarUrl: user.avatarUrl,
     createdAt: user.createdAt,
   };
 }
@@ -216,14 +221,21 @@ export const authService = {
 
   async updateProfile(
     userId: number,
-    input: { name?: string; phone?: string | null; currentPassword?: string; newPassword?: string }
+    input: {
+      name?: string;
+      phone?: string | null;
+      currentPassword?: string;
+      newPassword?: string;
+      removeAvatar?: boolean;
+    },
+    file?: Express.Multer.File
   ): Promise<PublicUser> {
     const user = await userRepo.findById(userId);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
 
-    const data: { name?: string; phone?: string | null; passwordHash?: string } = {};
+    const data: { name?: string; phone?: string | null; passwordHash?: string; avatarUrl?: string | null } = {};
     if (input.name !== undefined) data.name = input.name;
     if (input.phone !== undefined) data.phone = input.phone ?? null;
 
@@ -235,6 +247,13 @@ export const authService = {
         throw ApiError.badRequest('Current password is incorrect');
       }
       data.passwordHash = bcrypt.hashSync(input.newPassword, 12);
+    }
+
+    if (file) {
+      const processed = await processAvatarImage(file);
+      data.avatarUrl = await storeImage(processed);
+    } else if (input.removeAvatar) {
+      data.avatarUrl = null;
     }
 
     const updated = await userRepo.update(userId, data);
@@ -265,6 +284,7 @@ export const authService = {
       latitude: null,
       longitude: null,
       googleId: null,
+      avatarUrl: null,
     });
   },
 };

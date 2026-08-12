@@ -5,48 +5,55 @@
  * [NONE, LOW, MEDIUM, HIGH, CRITICAL] into a detection verdict + severity +
  * confidence. The bounding box comes from the CNN's own class activation map.
  *
- * A geometry gate (`potholeStructure`) must also pass before a hit is returned.
+ * Real phone photos are confirmed with a geometry check when the CNN is
+ * borderline; plain-road / non-pothole images are rejected when BOTH signals fail.
  */
 import sharp from 'sharp';
 import type { Severity } from '@prisma/client';
 import type { DetectionBox, DetectionResult, PotholeDetector } from '../detector.js';
-import { analyzePotholeStructure, boxArea, MAX_BOX_AREA, STRUCTURE_GRID } from '../potholeStructure.js';
+import {
+  analyzePotholeStructure,
+  isStrongPotholeStructure,
+  STRUCTURE_GRID,
+  type StructureResult,
+} from '../potholeStructure.js';
+import { analyzeRoadScenePixels, isPortraitScene, SCENE_SAMPLE_SIZE, type SceneAnalysis } from '../roadScene.js';
 import { runInference } from './forward.js';
 import { CnnModel, CLASSES, INPUT_SIZE } from './model.js';
 import type { Cache } from './model.js';
-import { meanOfSmallest } from './tensor.js';
 import { loadCnnWeights } from './weights.js';
 
-/** Class indices that mean "pothole" (0 is NONE). */
 const POTHOLES = [1, 2, 3, 4];
-/** Minimum softmax mass on the winning pothole class. */
-const CONFIDENCE_THRESHOLD = 0.52;
-/** Winning pothole class must beat NONE by at least this margin. */
-const NONE_MARGIN = 0.12;
-/** NONE probability above this always rejects — even if a pothole class peaks. */
-const MAX_NONE_PROB = 0.32;
+const CONFIDENCE_THRESHOLD = 0.5;
+const NONE_MARGIN = 0.08;
+/** Hard reject only when the network is clearly saying "no pothole". */
+const HARD_NONE_PROB = 0.55;
 
 const NO_POTHOLE_MESSAGE =
   'No pothole detected in this image. Please upload a clear, close-up photo of the road hazard.';
 
 let modelPromise: Promise<CnnModel> | null = null;
 
-/** Lazily load (and cache) the trained network — one model per process. */
 function getModel(): Promise<CnnModel> {
   modelPromise ??= loadCnnWeights().then((json) => CnnModel.fromJSON(json));
   return modelPromise;
 }
 
-/** CNN input (32×32) plus a higher-res grid for geometry checks (64×64). */
 async function toGrayscaleInputs(buffer: Buffer): Promise<{
   input: Float32Array;
   structurePixels: Uint8Array;
+  scenePixels: Uint8Array;
 }> {
-  const [cnnRaw, structureRaw] = await Promise.all([
+  const [cnnRaw, structureRaw, sceneRaw] = await Promise.all([
     sharp(buffer).greyscale().resize(INPUT_SIZE, INPUT_SIZE, { fit: 'fill' }).raw().toBuffer({ resolveWithObject: true }),
     sharp(buffer)
       .greyscale()
       .resize(STRUCTURE_GRID, STRUCTURE_GRID, { fit: 'fill' })
+      .raw()
+      .toBuffer({ resolveWithObject: true }),
+    sharp(buffer)
+      .resize(SCENE_SAMPLE_SIZE, SCENE_SAMPLE_SIZE, { fit: 'fill' })
+      .removeAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true }),
   ]);
@@ -56,22 +63,12 @@ async function toGrayscaleInputs(buffer: Buffer): Promise<{
   for (let i = 0; i < input.length; i++) input[i] = (cnnPixels[i] ?? 0) / 255;
 
   const structurePixels = new Uint8Array(structureRaw.data.buffer, structureRaw.data.byteOffset, structureRaw.data.length);
-  return { input, structurePixels };
+  const scenePixels = new Uint8Array(sceneRaw.data.buffer, sceneRaw.data.byteOffset, sceneRaw.data.length);
+  return { input, structurePixels, scenePixels };
 }
 
-/** How much darker the deepest pixels are than the typical road tone (32×32). */
-export function potholeDepthDelta(pixels255: Uint8Array): number {
-  const sorted = Array.from(pixels255).sort((a, b) => a - b);
-  const mid = sorted.length >> 1;
-  const baseline =
-    sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
-  const floor = meanOfSmallest(pixels255, 3);
-  return baseline - floor;
-}
-
-/** Bounding box from the class activation map (threshold at 50% of peak). */
 function boxFromCam(model: CnnModel, cache: Cache, cls: number): DetectionBox | null {
-  const size = INPUT_SIZE / 4; // 8
+  const size = INPUT_SIZE / 4;
   const cam = model.classActivation(cache, cls);
   let peak = -Infinity;
   for (let i = 0; i < cam.length; i++) peak = Math.max(peak, cam[i] ?? 0);
@@ -98,20 +95,31 @@ function boxFromCam(model: CnnModel, cache: Cache, cls: number): DetectionBox | 
   };
 }
 
-/** Shared verdict logic — exported for unit tests. */
+function maxPotholeProb(probs: ArrayLike<number>): number {
+  return POTHOLES.reduce((m, c) => Math.max(m, probs[c] ?? 0), 0);
+}
+
+/** Shared verdict — exported for unit tests. */
 export function evaluateCnnVerdict(
   probs: ArrayLike<number>,
   predictedClass: number,
-  boundingBox: DetectionBox | null,
-  structureOk: boolean,
-  structureMessage?: string
-): { isPothole: boolean; confidence: number; message?: string } {
+  structure: StructureResult,
+  scene: SceneAnalysis
+): { isPothole: boolean; confidence: number; severityClass?: number; message?: string } {
   const classProbs = Array.from(probs);
   const noneProb = classProbs[0] ?? 0;
-  const potholeProb = POTHOLES.reduce((m, c) => Math.max(m, classProbs[c] ?? 0), 0);
+  const potholeProb = maxPotholeProb(classProbs);
   const winnerProb = classProbs[predictedClass] ?? 0;
 
-  if (noneProb > MAX_NONE_PROB) {
+  if (!scene.isRoadLike || isPortraitScene(scene)) {
+    return {
+      isPothole: false,
+      confidence: potholeProb,
+      message: scene.message ?? NO_POTHOLE_MESSAGE,
+    };
+  }
+
+  if (predictedClass === 0 && noneProb >= HARD_NONE_PROB) {
     return {
       isPothole: false,
       confidence: potholeProb,
@@ -119,57 +127,72 @@ export function evaluateCnnVerdict(
     };
   }
 
-  const cnnHit =
+  const cnnPothole =
     predictedClass !== 0 &&
     winnerProb >= CONFIDENCE_THRESHOLD &&
     winnerProb >= noneProb + NONE_MARGIN;
 
-  if (!cnnHit) {
+  const strongStructure = isStrongPotholeStructure(structure);
+
+  // CNN hit — geometry must confirm a dark hole on asphalt (blocks faces / indoor objects).
+  if (cnnPothole && structure.ok && !isPortraitScene(scene)) {
+    return { isPothole: true, confidence: winnerProb, severityClass: predictedClass };
+  }
+
+  // High-confidence CNN + strong pothole geometry on a road scene.
+  if (cnnPothole && winnerProb >= 0.62 && strongStructure && !isPortraitScene(scene)) {
+    return { isPothole: true, confidence: winnerProb, severityClass: predictedClass };
+  }
+
+  // Geometry-led accept — still requires road scene and no portrait tones.
+  if (
+    strongStructure &&
+    predictedClass !== 0 &&
+    potholeProb >= 0.45 &&
+    noneProb <= 0.35 &&
+    structure.ok &&
+    !isPortraitScene(scene)
+  ) {
+    const severityClass = POTHOLES.reduce(
+      (best, c) => ((classProbs[c] ?? 0) > (classProbs[best] ?? 0) ? c : best),
+      POTHOLES[0]!
+    );
+    return {
+      isPothole: true,
+      confidence: Math.max(winnerProb, potholeProb),
+      severityClass,
+    };
+  }
+
+  if (!structure.ok && !cnnPothole) {
     return {
       isPothole: false,
       confidence: potholeProb,
-      message: noneProb >= 0.5
+      message: structure.message ?? NO_POTHOLE_MESSAGE,
+    };
+  }
+
+  return {
+    isPothole: false,
+    confidence: potholeProb,
+    message: cnnPothole
+      ? `${NO_POTHOLE_MESSAGE} No pothole-shaped defect was found on the road surface.`
+      : noneProb >= 0.4
         ? `${NO_POTHOLE_MESSAGE} The image looks like plain road (${Math.round(noneProb * 100)}% confidence).`
-        : NO_POTHOLE_MESSAGE,
-    };
-  }
-
-  if (!boundingBox || boxArea(boundingBox) > MAX_BOX_AREA) {
-    return {
-      isPothole: false,
-      confidence: winnerProb,
-      message: NO_POTHOLE_MESSAGE,
-    };
-  }
-
-  if (!structureOk) {
-    return {
-      isPothole: false,
-      confidence: winnerProb,
-      message: structureMessage ?? NO_POTHOLE_MESSAGE,
-    };
-  }
-
-  return { isPothole: true, confidence: winnerProb };
+        : structure.message ?? NO_POTHOLE_MESSAGE,
+  };
 }
 
 export const cnnDetector: PotholeDetector = {
   async detect(imageBuffer: Buffer): Promise<DetectionResult> {
     const model = await getModel();
-    const { input, structurePixels } = await toGrayscaleInputs(imageBuffer);
+    const { input, structurePixels, scenePixels } = await toGrayscaleInputs(imageBuffer);
     const { probs, predictedClass, cache } = runInference(model, input);
 
     const classProbs = Array.from(probs);
-    const boundingBox =
-      predictedClass !== 0 ? boxFromCam(model, cache, predictedClass) : null;
     const structure = analyzePotholeStructure(structurePixels);
-    const verdict = evaluateCnnVerdict(
-      probs,
-      predictedClass,
-      boundingBox,
-      structure.ok,
-      structure.message
-    );
+    const scene = analyzeRoadScenePixels(scenePixels, SCENE_SAMPLE_SIZE * SCENE_SAMPLE_SIZE);
+    const verdict = evaluateCnnVerdict(probs, predictedClass, structure, scene);
 
     if (!verdict.isPothole) {
       return {
@@ -181,7 +204,10 @@ export const cnnDetector: PotholeDetector = {
       };
     }
 
-    const severity = CLASSES[predictedClass] as Severity;
+    const severityClass = verdict.severityClass ?? predictedClass;
+    const boundingBox = boxFromCam(model, cache, severityClass);
+    const severity = CLASSES[severityClass] as Severity;
+
     return {
       isPothole: true,
       confidence: verdict.confidence,

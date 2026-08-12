@@ -1,6 +1,7 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { authController } from '../controllers/auth.controller.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
 import {
   authForgotLimiter,
   authLoginLimiter,
@@ -21,6 +22,15 @@ import {
 } from '../validations/auth.schema.js';
 
 export const authRoutes = Router();
+
+/** Parses an optional avatar file when the client sends multipart/form-data. */
+const optionalAvatarUpload: RequestHandler = (req, res, next) => {
+  if (req.is('multipart/form-data')) {
+    upload.single('avatar')(req, res, next);
+    return;
+  }
+  next();
+};
 
 // Public — every unauthenticated auth path is rate-limited per IP.
 authRoutes.post('/register', authRegisterLimiter, validateBody(registerSchema), asyncHandler(authController.register));
@@ -43,5 +53,11 @@ authRoutes.post(
 
 // Protected
 authRoutes.get('/me', authenticateToken, asyncHandler(authController.me));
-authRoutes.put('/profile', authenticateToken, validateBody(updateProfileSchema), asyncHandler(authController.updateProfile));
+authRoutes.put(
+  '/profile',
+  authenticateToken,
+  optionalAvatarUpload,
+  validateBody(updateProfileSchema),
+  asyncHandler(authController.updateProfile)
+);
 authRoutes.delete('/account', authenticateToken, asyncHandler(authController.deleteAccount));

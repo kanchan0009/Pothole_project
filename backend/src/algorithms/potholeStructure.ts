@@ -1,26 +1,19 @@
 /**
  * Geometry-based pothole validation on a downscaled grayscale grid.
  *
- * Real potholes are compact, sharp-edged dark holes on a lighter road surface.
- * This gate runs alongside the CNN so random photos, broad shadows, and thin
- * cracks cannot pass as detections when the network misfires.
+ * Used as a confirmation signal alongside the CNN — real photos vary in lighting,
+ * so thresholds are tuned for phone uploads, not just synthetic training data.
  */
 import type { DetectionBox } from './detector.js';
 
 export const STRUCTURE_GRID = 64;
-const DARK_RATIO = 0.72;
-/** Dark patch must cover at least this fraction of the frame. */
-const MIN_CLUSTER_RATIO = 0.005;
-/** Broad shadows / whole-frame darkness must not qualify. */
-const MAX_CLUSTER_RATIO = 0.22;
-/** Cluster mean must be at least this many levels below the road median. */
-const MIN_CLUSTER_DEPTH = 48;
-const MIN_ROAD_MEDIAN = 90;
-const MAX_ROAD_MEDIAN = 220;
-/** Reject thin cracks / scattered noise — blob pixels vs bounding-box area. */
-const MIN_BLOB_FILL = 0.38;
-/** CNN activation boxes covering most of the frame are not localized potholes. */
-export const MAX_BOX_AREA = 0.38;
+const DARK_RATIO = 0.74;
+const MIN_CLUSTER_RATIO = 0.0025;
+const MAX_CLUSTER_RATIO = 0.28;
+const MIN_CLUSTER_DEPTH = 34;
+const MIN_ROAD_MEDIAN = 65;
+const MAX_ROAD_MEDIAN = 245;
+const MIN_BLOB_FILL = 0.28;
 
 export interface StructureResult {
   ok: boolean;
@@ -36,7 +29,6 @@ function medianValue(values: Uint8Array): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 }
 
-/** Largest 4-connected cluster of set cells (flood fill), as a list of indices. */
 function largestCluster(mask: Uint8Array, grid: number): number[] {
   const visited = new Uint8Array(mask.length);
   const stack: number[] = [];
@@ -94,7 +86,11 @@ export function boxArea(box: DetectionBox): number {
   return box.width * box.height;
 }
 
-/** Validates that the image contains a pothole-shaped dark blob on road-like asphalt. */
+/** Strong dark blob — can support a borderline CNN on real phone photos. */
+export function isStrongPotholeStructure(result: StructureResult): boolean {
+  return result.ok && result.depth >= 42 && result.clusterRatio >= 0.004;
+}
+
 export function analyzePotholeStructure(pixels255: Uint8Array, grid = STRUCTURE_GRID): StructureResult {
   const median = medianValue(pixels255);
 

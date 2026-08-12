@@ -279,8 +279,8 @@ export const adminService = {
   },
 
   /** Dijkstra route from the crew to a report (recomputed on every call). */
-  async reportRoute(reportId: number) {
-    return routingService.routeToReport(reportId);
+  async reportRoute(reportId: number, options?: { workerId?: number }) {
+    return routingService.routeToReport(reportId, options);
   },
 
   // -------------------------------------------------------------------------

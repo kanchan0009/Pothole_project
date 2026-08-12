@@ -6,7 +6,7 @@ import { buildPdf, buildXlsx, toCsv } from '../utils/exporters.js';
 import {
   aiVerificationSchema,
   assignSchema,
-  exportSchema,
+  reportRouteQuerySchema,
   listUsersSchema,
   statisticsSchema,
   updateUserSchema,
@@ -82,7 +82,8 @@ export const adminController = {
   /** Dijkstra route from the crew to a report (recomputed fresh each call). */
   async reportRoute(req: Request, res: Response) {
     const { id } = reportIdSchema.parse(req.params);
-    const data = await adminService.reportRoute(id);
+    const { workerId } = reportRouteQuerySchema.parse(req.query);
+    const data = await adminService.reportRoute(id, workerId ? { workerId } : undefined);
     res.json({ success: true, data });
   },
 

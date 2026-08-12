@@ -57,6 +57,7 @@ model User {
   longitude     Float?
   refreshToken  String?
   googleId      String?          @unique
+  avatarUrl     String?
   isActive      Boolean          @default(true)
   reports       Report[]
   statusHistory StatusHistory[]

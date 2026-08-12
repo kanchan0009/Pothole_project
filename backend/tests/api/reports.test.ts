@@ -307,6 +307,21 @@ describe('GET /api/reports/mine + /mine/stats', () => {
     for (const r of res.body.data.reports) expect(r.userId).toBe(myId);
   });
 
+  it('filters the caller reports by status', async () => {
+    const pending = await request(app)
+      .get('/api/reports/mine?status=PENDING')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(pending.body.data.reports.length).toBe(2);
+    expect(pending.body.data.reports.every((r: { status: string }) => r.status === 'PENDING')).toBe(true);
+
+    const verified = await request(app)
+      .get('/api/reports/mine?status=VERIFIED')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(verified.body.data.reports).toHaveLength(0);
+  });
+
   it('returns per-status counts scoped to the caller', async () => {
     const res = await request(app)
       .get('/api/reports/mine/stats')
@@ -523,64 +538,107 @@ describe('POST /api/reports/:id/remove-user (owner cleanup)', () => {
     await request(app).post(`/api/reports/${completedId}/remove-user`).expect(401);
   });
 
-  it('hides a COMPLETED report from the owner’s dashboard only', async () => {
+  it('permanently deletes a COMPLETED report for the owner', async () => {
     const res = await request(app)
       .post(`/api/reports/${completedId}/remove-user`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(200);
-    expect(res.body.message).toContain('removed from your dashboard');
+    expect(res.body.message).toMatch(/deleted permanently/i);
 
-    // Gone from the owner’s list and stats…
     const mine = await request(app)
       .get('/api/reports/mine?limit=50')
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(200);
     expect(mine.body.data.reports.map((r: { id: number }) => r.id)).not.toContain(completedId);
+
     const stats = await request(app)
       .get('/api/reports/mine/stats')
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(200);
+    expect(stats.body.data.status.total).toBe(0);
     expect(stats.body.data.status.completed).toBe(0);
 
-    // …but still visible publicly and to the admin.
-    const pub = await request(app).get(`/api/reports/${completedId}`).expect(200);
-    expect(pub.body.data.report.status).toBe('COMPLETED');
+    await request(app).get(`/api/reports/${completedId}`).expect(404);
     const admin = await request(app)
       .get('/api/admin/reports?limit=50')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    expect(admin.body.data.reports.map((r: { id: number }) => r.id)).toContain(completedId);
+    expect(admin.body.data.reports.map((r: { id: number }) => r.id)).not.toContain(completedId);
 
-    // The owner was notified.
     const notifs = await request(app)
       .get('/api/notifications')
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(200);
     const titles = notifs.body.data.notifications.map((n: { title: string }) => n.title);
-    expect(titles).toContain('Report removed');
+    expect(titles).toContain('Report deleted');
   });
 
-  it('rejects removing a report that is not COMPLETED (400)', async () => {
+  it('permanently deletes a PENDING report for the owner', async () => {
     const created = await submit(ownerToken, {
       ...baseFields,
-      title: 'Still pending pothole',
-      latitude: 27.585,
-      longitude: 85.165,
+      title: 'Pending removable pothole',
+      latitude: 27.586,
+      longitude: 85.166,
       ignoreDuplicate: true,
     }).expect(201);
+    const pendingId = created.body.data.report.id;
+
     await request(app)
-      .post(`/api/reports/${created.body.data.report.id}/remove-user`)
+      .post(`/api/reports/${pendingId}/remove-user`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    const mine = await request(app)
+      .get('/api/reports/mine?limit=50')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+    expect(mine.body.data.reports.map((r: { id: number }) => r.id)).not.toContain(pendingId);
+
+    await request(app).get(`/api/reports/${pendingId}`).expect(404);
+
+    const stats = await request(app)
+      .get('/api/reports/mine/stats')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+    expect(stats.body.data.status.total).toBe(0);
+  });
+
+  it('rejects deleting a report that is IN_PROGRESS (400)', async () => {
+    const created = await submit(ownerToken, {
+      ...baseFields,
+      title: 'Active work pothole',
+      latitude: 27.587,
+      longitude: 85.167,
+      ignoreDuplicate: true,
+    }).expect(201);
+    const id = created.body.data.report.id;
+    for (const status of ['VERIFIED', 'ASSIGNED', 'IN_PROGRESS']) {
+      await request(app)
+        .put(`/api/admin/reports/${id}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .field('status', status)
+        .expect(200);
+    }
+    await request(app)
+      .post(`/api/reports/${id}/remove-user`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(400);
   });
 
-  it('rejects another user removing someone else’s report (404)', async () => {
+  it('rejects another user deleting someone else’s report (404)', async () => {
+    const created = await submit(ownerToken, {
+      ...baseFields,
+      title: 'Protected pothole',
+      latitude: 27.588,
+      longitude: 85.168,
+      ignoreDuplicate: true,
+    }).expect(201);
     const other = await request(app)
       .post('/api/auth/register')
       .send({ name: 'Remove Stranger', email: 'remove-stranger@example.com', password: 'StrongPass@1' })
       .expect(201);
     await request(app)
-      .post(`/api/reports/${completedId}/remove-user`)
+      .post(`/api/reports/${created.body.data.report.id}/remove-user`)
       .set('Authorization', `Bearer ${other.body.data.token}`)
       .expect(404);
   });

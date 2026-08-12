@@ -14,7 +14,7 @@ import { reportRepo } from '../repositories/report.repo.js';
 import { userRepo } from '../repositories/user.repo.js';
 import { ApiError } from '../utils/ApiError.js';
 
-export type TeamSource = 'assigned' | 'nearest';
+export type TeamSource = 'assigned' | 'nearest' | 'selected';
 
 export interface ReportRouteOutput {
   reportId: number;
@@ -49,7 +49,7 @@ export const routingService = {
    * team when the report has no assignment yet. Off-network reports return
    * `reachable:false` rather than throwing — the UI shows that gracefully.
    */
-  async routeToReport(reportId: number): Promise<ReportRouteOutput> {
+  async routeToReport(reportId: number, options?: { workerId?: number }): Promise<ReportRouteOutput> {
     const report = await reportRepo.findById(reportId);
     if (!report) {
       throw ApiError.notFound('Report not found');
@@ -61,18 +61,35 @@ export const routingService = {
     const target = { lat: report.latitude, lng: report.longitude };
     const graph = await getRoadGraph();
 
-    // 1. Prefer the assigned worker — editing their coords recalculates the route.
-    const assigned = await prisma.assignment.findFirst({
-      where: { reportId },
-      orderBy: { assignedAt: 'desc' },
-    });
     let team: PositionedTeam | null = null;
     let teamSource: TeamSource | null = null;
-    if (assigned?.userId) {
-      const worker = await userRepo.findById(assigned.userId);
-      if (worker?.latitude != null && worker.longitude != null) {
+
+    // 0. Explicit worker — admin picked someone in the assign UI (preview or re-route).
+    if (options?.workerId) {
+      const worker = await userRepo.findById(options.workerId);
+      if (
+        worker?.isWorker &&
+        worker.isActive &&
+        worker.latitude != null &&
+        worker.longitude != null
+      ) {
         team = { id: worker.id, name: worker.name, lat: worker.latitude, lng: worker.longitude };
-        teamSource = 'assigned';
+        teamSource = 'selected';
+      }
+    }
+
+    // 1. Prefer the assigned worker — editing their coords recalculates the route.
+    if (!team) {
+      const assigned = await prisma.assignment.findFirst({
+        where: { reportId },
+        orderBy: { assignedAt: 'desc' },
+      });
+      if (assigned?.userId) {
+        const worker = await userRepo.findById(assigned.userId);
+        if (worker?.latitude != null && worker.longitude != null) {
+          team = { id: worker.id, name: worker.name, lat: worker.latitude, lng: worker.longitude };
+          teamSource = 'assigned';
+        }
       }
     }
 

@@ -206,6 +206,37 @@ describe('Report route — Dijkstra over the road graph', () => {
     expect(res.body.data.route.reachable).toBe(true);
   });
 
+  it('routes through a manually selected worker before assignment is saved', async () => {
+    const farWorker = await prisma.user.create({
+      data: {
+        name: 'Far Worker',
+        email: 'far.worker@roadguard.gov',
+        passwordHash: bcrypt.hashSync('Worker@123', 10),
+        role: 'USER',
+        isWorker: true,
+        latitude: 27.715,
+        longitude: 85.325,
+      },
+    });
+    const id = await seedReport({ severity: 'MEDIUM', status: 'VERIFIED', lat: 27.71, lng: 85.32 });
+
+    const nearest = await request(app)
+      .get(`/api/admin/reports/${id}/route`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(nearest.body.data.team.id).toBe(workerId);
+    expect(nearest.body.data.route.etaMinutes).toBeCloseTo(1, 1);
+
+    const selected = await request(app)
+      .get(`/api/admin/reports/${id}/route`)
+      .query({ workerId: farWorker.id })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(selected.body.data.teamSource).toBe('selected');
+    expect(selected.body.data.team.id).toBe(farWorker.id);
+    expect(selected.body.data.route.etaMinutes).toBeCloseTo(2, 1);
+  });
+
   it('recalculates the route when the worker moves', async () => {
     const id = await seedReport({ severity: 'MEDIUM', status: 'VERIFIED', lat: 27.71, lng: 85.32 });
 

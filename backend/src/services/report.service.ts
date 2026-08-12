@@ -464,20 +464,19 @@ if (imageHash) {
     if (!existing || existing.userId !== userId) {
       throw ApiError.notFound('Report not found');
     }
-    if (existing.status !== Status.COMPLETED) {
-      throw ApiError.badRequest('Only completed reports can be removed from your dashboard');
+    if (existing.status === Status.ASSIGNED || existing.status === Status.IN_PROGRESS) {
+      throw ApiError.badRequest('This report is being worked on and cannot be deleted yet.');
     }
-    await prisma.report.update({
-      where: { id },
-      data: { userHidden: true },
-    });
+
+    const ref = reportRef(id);
     await prisma.notification.create({
       data: {
         userId,
-        title: 'Report removed',
-        message: 'The completed report has been removed from your dashboard.',
+        title: 'Report deleted',
+        message: `${ref} has been permanently deleted.`,
       },
     });
+    await reportRepo.remove(id);
   },
 
   async checkDuplicate(latitude: number, longitude: number): Promise<{ duplicate: boolean; nearbyReport?: NearbyReportDTO }> {

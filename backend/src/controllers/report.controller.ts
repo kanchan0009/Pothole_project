@@ -79,7 +79,7 @@ export const reportController = {
   async removeForUser(req: Request, res: Response) {
     const { id } = reportIdSchema.parse(req.params);
     await reportService.removeForUser(req.user!.id, id);
-    res.json({ success: true, message: 'The completed report has been removed from your dashboard.' });
+    res.json({ success: true, message: 'Report deleted permanently.' });
   },
 
   async checkDuplicate(req: Request, res: Response) {

@@ -38,9 +38,14 @@ export const resetPasswordSchema = z.object({
 export const updateProfileSchema = z
   .object({
     name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80).optional(),
-    phone: z.string().trim().max(20).nullable().optional(),
+    phone: z
+      .preprocess((v) => (v === '' ? null : v), z.string().trim().max(20).nullable())
+      .optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
+    removeAvatar: z
+      .preprocess((v) => v === true || v === 'true' || v === '1', z.boolean())
+      .optional(),
   })
   .refine(
     (d) => !d.newPassword || !!d.currentPassword,

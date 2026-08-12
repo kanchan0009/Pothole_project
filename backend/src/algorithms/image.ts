@@ -10,12 +10,37 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 
 /** Rejects unsupported types/sizes before any processing happens. */
-export function validateImageFile(file: Express.Multer.File): void {
-  if (!file || !file.mimetype || !ALLOWED_MIMES.has(file.mimetype.toLowerCase())) {
-    throw ApiError.badRequest('The uploaded image is not in a valid format. Please upload a clear image of the pothole.');
+export function validateImageFile(file: Express.Multer.File, message?: string): void {
+  const invalidMsg =
+    message ??
+    'The uploaded image is not in a valid format. Please upload a clear image of the pothole.';
+  if (!file?.buffer?.length) {
+    throw ApiError.badRequest(invalidMsg);
+  }
+  const mime = (file.mimetype || '').toLowerCase();
+  // Device cameras often send an empty or generic type; sharp validates the bytes in processImage.
+  if (mime && mime !== 'application/octet-stream' && !ALLOWED_MIMES.has(mime)) {
+    throw ApiError.badRequest(invalidMsg);
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    throw ApiError.badRequest('The uploaded image is not in a valid format. Please upload a clear image of the pothole.');
+    throw ApiError.badRequest(invalidMsg);
+  }
+}
+
+const AVATAR_INVALID_MSG =
+  'Please upload a valid profile photo (JPEG, PNG, or WebP, max 5 MB).';
+
+/** Profile photos — square crop, no pothole-specific blank-image check. */
+export async function processAvatarImage(file: Express.Multer.File): Promise<Buffer> {
+  validateImageFile(file, AVATAR_INVALID_MSG);
+  try {
+    return await sharp(file.buffer)
+      .rotate()
+      .resize({ width: 400, height: 400, fit: 'cover' })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch {
+    throw ApiError.badRequest(AVATAR_INVALID_MSG);
   }
 }
 

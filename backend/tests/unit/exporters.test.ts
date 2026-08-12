@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 import type { ReportExportRow } from '../../src/repositories/admin.repo.js';
-import { buildPdf, buildXlsx, toCsv } from '../../src/utils/exporters.js';
+import { buildPdf, buildReceiptPdf, buildXlsx, toCsv } from '../../src/utils/exporters.js';
 
 function makeRow(overrides: Partial<ReportExportRow> = {}): ReportExportRow {
   return {
@@ -85,5 +85,48 @@ describe('buildPdf', () => {
     const buf = await buildPdf([makeRow()]);
     expect(Buffer.isBuffer(buf)).toBe(true);
     expect(buf.subarray(0, 4).toString()).toBe('%PDF');
+  });
+});
+
+describe('buildReceiptPdf', () => {
+  it('returns a valid PDF for a full receipt payload', async () => {
+    const buf = await buildReceiptPdf({
+      ref: 'RG-000042',
+      title: 'Large pothole near the school crossing with a very long title that wraps cleanly',
+      description: 'Several centimetres deep and widening after each rain. Traffic slows to a crawl here.',
+      status: 'VERIFIED',
+      severity: 'HIGH',
+      roadName: 'Tripureshwor Marg',
+      municipality: 'Kathmandu Metropolitan City',
+      ward: '12',
+      landmark: 'Opposite the community health post',
+      latitude: 27.69345,
+      longitude: 85.31298,
+      reporterName: 'Ram Bahadur',
+      duplicate: false,
+      priorityScore: 72,
+      imageUrl: '/uploads/missing.webp',
+      completionImageUrl: null,
+      rejectionReason: null,
+      createdAt: '2026-08-06T09:00:00.000Z',
+      updatedAt: '2026-08-06T12:30:00.000Z',
+      history: [
+        {
+          status: 'PENDING',
+          remarks: 'Submitted by citizen via mobile app.',
+          updatedBy: 'Ram Bahadur',
+          createdAt: '2026-08-06T09:00:00.000Z',
+        },
+        {
+          status: 'VERIFIED',
+          remarks: 'Verified by municipal road inspector after field review.',
+          updatedBy: 'Admin User',
+          createdAt: '2026-08-06T12:30:00.000Z',
+        },
+      ],
+    });
+    expect(Buffer.isBuffer(buf)).toBe(true);
+    expect(buf.subarray(0, 4).toString()).toBe('%PDF');
+    expect(buf.length).toBeGreaterThan(1500);
   });
 });

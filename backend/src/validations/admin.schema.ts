@@ -17,6 +17,11 @@ export const statusUpdateSchema = z.object({
   assignedTo: z.string().trim().max(120).optional(),
 });
 
+/** GET /admin/reports/:id/route — optional workerId previews a manual pick before assign. */
+export const reportRouteQuerySchema = z.object({
+  workerId: z.coerce.number().int().positive().optional(),
+});
+
 /** POST /admin/reports/:id/assign — pick a worker or let the service choose the nearest. */
 export const assignSchema = z
   .object({
