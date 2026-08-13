@@ -25,19 +25,7 @@ export const userRepo = {
     return prisma.user.create({ data });
   },
 
-  update(id: number, data: {
-    name?: string;
-    email?: string;
-    phone?: string | null;
-    passwordHash?: string | null;
-    refreshToken?: string | null;
-    isActive?: boolean;
-    role?: 'USER' | 'ADMIN';
-    isWorker?: boolean;
-    latitude?: number | null;
-    longitude?: number | null;
-    googleId?: string | null;
-  }) {
+  update(id: number, data: Prisma.UserUpdateInput) {
     return prisma.user.update({ where: { id }, data });
   },
 
