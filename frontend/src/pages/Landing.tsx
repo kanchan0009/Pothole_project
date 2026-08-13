@@ -104,20 +104,28 @@ const STATS = [
 
 const FAQS = [
   {
-    q: "Who receives my report?",
-    a: "Reports are routed directly to your city's Public Works department. We don't hold reports — they're forwarded within minutes.",
+    q: "Do I need an account to report a pothole?",
+    a: "Yes. Create a free citizen account to submit reports, track status, receive notifications, and download PDF receipts. You can browse the public pothole map without signing in.",
   },
   {
-    q: "Do I need to create an account?",
-    a: "No. Anonymous reports are accepted. Creating an account lets you track status updates and receive repair notifications.",
+    q: "How does RoadGuard check my photo?",
+    a: "When you upload or capture a photo, our AI scans the image for road damage, estimates severity, and highlights the detected area. Submissions without a clear pothole are flagged so crews only receive valid reports.",
   },
   {
-    q: "What if the pothole is on a highway?",
-    a: "Highways fall under state jurisdiction. After submission, we'll detect the road type and route your report to the correct agency.",
+    q: "What if the same pothole was already reported?",
+    a: "RoadGuard checks for open reports within 20 metres of your pin. If one exists, you'll see a duplicate warning and can continue or cancel — reducing repeat tickets for the same hazard.",
   },
   {
-    q: "How long does a repair take?",
-    a: "The city targets 30 days for standard repairs and 48 hours for critical hazards. Our dashboard shows live repair timelines.",
+    q: "How do I track my report after submitting?",
+    a: "Your dashboard lists every report with status updates: Pending → Verified → Assigned → In Progress → Completed. Open any report for a full timeline, AI confidence score, and a downloadable PDF receipt.",
+  },
+  {
+    q: "How does the municipality prioritize repairs?",
+    a: "Admins use a priority queue ranked by severity, duplicate confirmations, and report age. Reports can be verified, assigned to the nearest field worker, and routed on the admin map using shortest-path planning.",
+  },
+  {
+    q: "Can I delete a report I submitted by mistake?",
+    a: "Yes. From your dashboard or report detail, you can permanently delete reports that are not yet assigned or in progress. Once a crew is working on it, the report stays on record until the repair is complete.",
   },
 ];
 
