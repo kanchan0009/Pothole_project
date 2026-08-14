@@ -22,16 +22,16 @@ export interface ContactMessageList {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
-/** Public contact form — persists the message and alerts the admins. */
+
 export const contactService = {
   async submit(input: ContactMessageInput): Promise<ContactSubmission> {
     const message = await contactRepo.create(input);
-    // Short summary in the bell; the full message stays in contact_messages.
+    
     await notifyAdmins('New contact message', `${message.name}: ${message.subject}`);
     return { id: message.id, createdAt: message.createdAt.toISOString() };
   },
 
-  /** Admin inbox — newest-first with search + pagination (query already normalized). */
+  
   async listMessages(query: { page: number; limit: number; search?: string }): Promise<ContactMessageList> {
     const { items, total } = await contactRepo.list({
       page: query.page,
@@ -66,7 +66,7 @@ export const contactService = {
       });
     }
     
-    // Mark message as replied instead of deleting it
+    
     await (prisma.contactMessage as any).update({ where: { id }, data: { isReplied: true } });
   },
 };

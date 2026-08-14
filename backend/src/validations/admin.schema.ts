@@ -1,28 +1,23 @@
 import { Role, Severity, Status } from '@prisma/client';
 import { z } from 'zod';
 
-/**
- * Admin-scoped request validation.
- *
- * Multipart status updates arrive with string fields (same convention as the
- * report form), so enum values validate natively and numeric fields coerce.
- */
 
-/** PUT /admin/reports/:id/status — a workflow transition (image is a separate multer field). */
+
+
 export const statusUpdateSchema = z.object({
   status: z.nativeEnum(Status),
   remarks: z.string().trim().max(500, 'Remarks are too long').optional(),
-  // Optional manual assignment captured on the same call (verify + assign in one action).
+  
   workerId: z.coerce.number().int().positive().optional(),
   assignedTo: z.string().trim().max(120).optional(),
 });
 
-/** GET /admin/reports/:id/route — optional workerId previews a manual pick before assign. */
+
 export const reportRouteQuerySchema = z.object({
   workerId: z.coerce.number().int().positive().optional(),
 });
 
-/** POST /admin/reports/:id/assign — pick a worker or let the service choose the nearest. */
+
 export const assignSchema = z
   .object({
     workerId: z.coerce.number().int().positive().optional(),
@@ -38,7 +33,7 @@ const booleanish = z.preprocess(
   z.boolean().optional()
 );
 
-/** GET /admin/users — paginated list with filters. */
+
 export const listUsersSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(10),
@@ -48,13 +43,13 @@ export const listUsersSchema = z.object({
   isWorker: booleanish,
 });
 
-/** PUT /admin/users/:id — at least one field is required. */
+
 export const updateUserSchema = z
   .object({
     role: z.nativeEnum(Role).optional(),
     isActive: z.boolean().optional(),
     isWorker: z.boolean().optional(),
-    // Field-worker coordinates — editing them recalculates the Dijkstra route.
+    
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
   })
@@ -75,7 +70,7 @@ export const updateUserSchema = z
     path: ['latitude'],
   });
 
-/** POST /admin/reports/:id/ai-verify — an admin's verdict on the AI detection. */
+
 export const aiVerificationSchema = z
   .object({
     approved: z.boolean(),
@@ -86,14 +81,14 @@ export const aiVerificationSchema = z
     path: ['reason'],
   });
 
-/** GET /admin/statistics — time-series bucketing period. */
+
 export const statisticsSchema = z.object({
   period: z.enum(['day', 'week', 'month', 'year']).default('month'),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
 });
 
-/** GET /admin/export/:format — which report set to export. */
+
 export const exportSchema = z.object({
   format: z.enum(['csv', 'xlsx', 'pdf']),
   status: z.nativeEnum(Status).optional(),

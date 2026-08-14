@@ -18,7 +18,7 @@ export interface StatusCounts {
 export interface HeatPoint {
   latitude: number;
   longitude: number;
-  weight: number; // severity-weighted intensity for the heat layer
+  weight: number; 
   severity: Severity;
   status: Status;
 }
@@ -37,12 +37,9 @@ export interface ReportExportRow {
   updatedAt: Date;
 }
 
-/**
- * Data access for admin analytics and audit queries — the aggregation side of
- * the reports family. CRUD stays in report.repo; users stay in user.repo.
- */
+
 export const adminRepo = {
-  /** Counts per workflow status + grand total. */
+  
   async statusCounts(): Promise<StatusCounts> {
     const [total, byStatus] = await Promise.all([
       prisma.report.count(),
@@ -60,17 +57,14 @@ export const adminRepo = {
     };
   },
 
-  /** Number of reports created inside [from, to]. */
+  
   countsBetween(from: Date, to?: Date) {
     return prisma.report.count({
       where: { createdAt: { gte: from, lte: to ?? undefined } },
     });
   },
 
-  /**
-   * Mean time from submission to the first COMPLETED status-history entry,
-   * in hours. Null when no report has ever been completed.
-   */
+  
   async averageResolutionHours(): Promise<number | null> {
     const completed = await prisma.report.findMany({
       where: { status: Status.COMPLETED },
@@ -97,7 +91,7 @@ export const adminRepo = {
     return Math.round((hours.reduce((a, b) => a + b, 0) / hours.length) * 100) / 100;
   },
 
-  /** Time-series of report volume bucketed by the requested period. */
+  
   async timeSeries(period: AnalyticsPeriod, from?: Date, to?: Date) {
     const end = to ?? new Date();
     const start = from ?? windowStart(period, end);
@@ -117,7 +111,7 @@ export const adminRepo = {
     return prisma.report.groupBy({ by: ['severity'], _count: { severity: true } });
   },
 
-  /** Most active reporters by number of submitted reports. */
+  
   async topActiveUsers(limit = 8): Promise<{ userId: number; name: string; count: number }[]> {
     const rows = await prisma.report.groupBy({
       by: ['userId'],
@@ -138,7 +132,7 @@ export const adminRepo = {
     return top.map((r) => ({ userId: r.userId, name: nameById.get(r.userId) ?? 'Unknown', count: r.count }));
   },
 
-  /** Percent of AI-detected reports the admin confirmed (null when none reviewed yet). */
+  
   async aiAccuracy(): Promise<number | null> {
     const [total, confirmed] = await Promise.all([
       prisma.report.count({ where: { aiVerified: { not: null } } }),
@@ -148,7 +142,7 @@ export const adminRepo = {
     return Math.round((confirmed / total) * 10_000) / 100;
   },
 
-  /** Municipalities with the most reports (most-damaged roads view). */
+  
   topRoads(limit = 10) {
     return prisma.report.groupBy({
       by: ['roadName'],
@@ -162,7 +156,7 @@ export const adminRepo = {
     );
   },
 
-  /** Municipality + ward hotspots. */
+  
   topAreas(limit = 10) {
     return prisma.report.groupBy({
       by: ['municipality', 'ward'],
@@ -175,7 +169,7 @@ export const adminRepo = {
     );
   },
 
-  /** All geolocated reports as heat points + marker anchors. */
+  
   async heatmap(): Promise<HeatPoint[]> {
     const rows = await prisma.report.findMany({
       where: { latitude: { not: null }, longitude: { not: null } },
@@ -194,7 +188,7 @@ export const adminRepo = {
       }));
   },
 
-  /** Flat report rows for CSV/XLSX/PDF exports (unpaginated). */
+  
   async exportRows(filters: {
     status?: Status;
     severity?: Severity;
@@ -239,7 +233,7 @@ export const adminRepo = {
     }));
   },
 
-  /** Most recent admin actions (audit trail). */
+  
   recentLogs(limit = 10) {
     return prisma.adminLog.findMany({
       orderBy: { createdAt: 'desc' },
@@ -253,25 +247,25 @@ export const adminRepo = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Time-series helpers (pure; bucketing done in JS for SQLite portability —
-// a production Postgres build could push date_trunc down into SQL instead).
-// ---------------------------------------------------------------------------
+
+
+
+
 
 function windowStart(period: AnalyticsPeriod, end: Date): Date {
   const d = new Date(end);
   switch (period) {
     case 'day':
-      d.setDate(d.getDate() - 29); // trailing 30 days
+      d.setDate(d.getDate() - 29); 
       break;
     case 'week':
-      d.setDate(d.getDate() - 77); // trailing 12 weeks
+      d.setDate(d.getDate() - 77); 
       break;
     case 'month':
-      d.setMonth(d.getMonth() - 11); // trailing 12 months
+      d.setMonth(d.getMonth() - 11); 
       break;
     case 'year':
-      d.setFullYear(d.getFullYear() - 4); // trailing 5 years
+      d.setFullYear(d.getFullYear() - 4); 
       break;
   }
   return bucketStart(period, d);
@@ -280,7 +274,7 @@ function windowStart(period: AnalyticsPeriod, end: Date): Date {
 function bucketStart(period: AnalyticsPeriod, d: Date): Date {
   if (period === 'day') return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   if (period === 'week') {
-    const day = (d.getDay() + 6) % 7; // Monday = 0
+    const day = (d.getDay() + 6) % 7; 
     return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
   }
   if (period === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -311,11 +305,11 @@ function bucketize(
   const stop = end.getTime();
   const cursor = new Date(bucketStart(period, start));
 
-  // Pre-fill every bucket so sparse ranges still show zero counts.
+  
   while (cursor.getTime() <= stop) {
     buckets.set(cursor.toISOString(), { label: bucketLabel(period, cursor), count: 0 });
-    const next = bucketStart(period, nextBucket(period, cursor)); // re-normalize (DST-safe)
-    if (next.getTime() <= cursor.getTime()) break; // safety against infinite loops
+    const next = bucketStart(period, nextBucket(period, cursor)); 
+    if (next.getTime() <= cursor.getTime()) break; 
     cursor.setTime(next.getTime());
   }
 
@@ -327,7 +321,7 @@ function bucketize(
   return [...buckets.values()];
 }
 
-/** ISO-8601 week number (Monday-start). */
+
 function isoWeekNumber(d: Date): number {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;

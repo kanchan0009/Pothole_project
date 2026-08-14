@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 
-/** User data access — the only place that touches the users table. */
+
 export const userRepo = {
   findByEmail(email: string) {
     return prisma.user.findUnique({ where: { email } });
@@ -29,7 +29,7 @@ export const userRepo = {
     return prisma.user.update({ where: { id }, data });
   },
 
-  /** Active assignable field workers (nearest-worker auto-assignment). */
+  
   findWorkers() {
     return prisma.user.findMany({
       where: { isWorker: true, isActive: true },
@@ -42,7 +42,7 @@ export const userRepo = {
     return prisma.user.update({ where: { id }, data: { refreshToken: refreshTokenHash } });
   },
 
-  /** Paginated admin user list with a per-user report count. */
+  
   async list(params: {
     where: { role?: 'USER' | 'ADMIN'; isActive?: boolean; isWorker?: boolean; search?: string };
     page: number;

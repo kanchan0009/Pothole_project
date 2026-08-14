@@ -9,7 +9,7 @@ import { ApiError } from '../utils/ApiError.js';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 
-/** Rejects unsupported types/sizes before any processing happens. */
+
 export function validateImageFile(file: Express.Multer.File, message?: string): void {
   const invalidMsg =
     message ??
@@ -18,7 +18,7 @@ export function validateImageFile(file: Express.Multer.File, message?: string): 
     throw ApiError.badRequest(invalidMsg);
   }
   const mime = (file.mimetype || '').toLowerCase();
-  // Device cameras often send an empty or generic type; sharp validates the bytes in processImage.
+  
   if (mime && mime !== 'application/octet-stream' && !ALLOWED_MIMES.has(mime)) {
     throw ApiError.badRequest(invalidMsg);
   }
@@ -30,7 +30,7 @@ export function validateImageFile(file: Express.Multer.File, message?: string): 
 const AVATAR_INVALID_MSG =
   'Please upload a valid profile photo (JPEG, PNG, or WebP, max 5 MB).';
 
-/** Profile photos — square crop, no pothole-specific blank-image check. */
+
 export async function processAvatarImage(file: Express.Multer.File): Promise<Buffer> {
   validateImageFile(file, AVATAR_INVALID_MSG);
   try {
@@ -44,20 +44,20 @@ export async function processAvatarImage(file: Express.Multer.File): Promise<Buf
   }
 }
 
-/** Normalizes an uploaded image to a compressed WebP buffer (max 1200 px wide) and validates image content. */
+
 export async function processImage(file: Express.Multer.File): Promise<Buffer> {
   try {
     const s = sharp(file.buffer);
     const stats = await s.stats();
     
-    // Check if the image is blank / solid color (very low standard deviation across color channels)
+    
     const isBlank = stats.channels.every((ch) => ch.stdev < 1.5);
     if (isBlank) {
       throw ApiError.badRequest('The uploaded image is not in a valid format. Please upload a clear image of the pothole.');
     }
 
     return await sharp(file.buffer)
-      .rotate() // honor EXIF orientation from phone cameras
+      .rotate() 
       .resize({ width: 1200, withoutEnlargement: true })
       .webp({ quality: 80 })
       .toBuffer();
@@ -95,7 +95,7 @@ export async function computeImageHash(buffer: Buffer): Promise<string> {
   }
 }
 
-/** Computes Hamming distance between two binary hash strings. */
+
 export function hammingDistance(hash1: string, hash2: string): number {
   if (!hash1 || !hash2 || hash1.length !== hash2.length) return 999;
   let dist = 0;
@@ -105,7 +105,7 @@ export function hammingDistance(hash1: string, hash2: string): number {
   return dist;
 }
 
-/** Uploads a buffer to Cloudinary; falls back to local disk when no creds are set. */
+
 export async function storeImage(buffer: Buffer): Promise<string> {
   const hasCloudinary = Boolean(
     env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET
@@ -119,7 +119,7 @@ export async function storeImage(buffer: Buffer): Promise<string> {
     return uploadBufferToCloudinary(buffer);
   }
 
-  // Local-disk fallback: saved under backend/uploads/, served at /uploads/<file>.
+  
   const fileName = `${crypto.randomUUID()}.webp`;
   const dir = path.resolve(process.cwd(), 'uploads');
   await fs.mkdir(dir, { recursive: true });

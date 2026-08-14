@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
 
-/** Thin HTTP layer — all business logic lives in the service. */
+
 export const authController = {
   async register(req: Request, res: Response) {
     const result = await authService.register(req.body);

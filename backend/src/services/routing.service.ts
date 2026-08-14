@@ -1,11 +1,4 @@
-/**
- * Road routing service — the HTTP-facing layer over the OSM road graph.
- *
- * `routeToReport` plans the driving route from the maintenance crew to a
- * pothole: it prefers the report's *assigned* worker (so the route recalculates
- * automatically when that worker's lat/lng is edited), otherwise it picks the
- * nearest team by driving time (Dijkstra over Haversine-weighted edges).
- */
+
 import { loadRoadGraph, type RoadGraph } from '../algorithms/roadGraph.js';
 import { nearestTeamByRoad, planRoute, type PositionedTeam, type RoutePlan } from '../algorithms/routing.js';
 import type { GeoPoint } from '../algorithms/roadGraph.js';
@@ -18,37 +11,33 @@ export type TeamSource = 'assigned' | 'nearest' | 'selected';
 
 export interface ReportRouteOutput {
   reportId: number;
-  /** The road route (reachable flag + path + distance/ETA), or an unreachable plan. */
+  
   route: RoutePlan;
-  /** The crew the route is drawn from (null when no positioned team exists). */
+  
   team: PositionedTeam | null;
   teamSource: TeamSource | null;
 }
 
 let graphPromise: Promise<RoadGraph> | null = null;
 
-/** Lazy singleton — the graph is read once per process, then reused. */
+
 export function getRoadGraph(): Promise<RoadGraph> {
   graphPromise ??= loadRoadGraph({ allowFetch: true });
   return graphPromise;
 }
 
-/** Test hook: force the singleton to re-read the cache / fixture graph. */
+
 export function resetRoadGraphSingleton(): void {
   graphPromise = null;
 }
 
-/** Test hook: inject a fixed graph (e.g. a small fixture) so API tests run offline. */
+
 export function injectRoadGraph(graph: RoadGraph): void {
   graphPromise = Promise.resolve(graph);
 }
 
 export const routingService = {
-  /**
-   * Route from the crew to the report. Falls back to the nearest *driving*
-   * team when the report has no assignment yet. Off-network reports return
-   * `reachable:false` rather than throwing — the UI shows that gracefully.
-   */
+  
   async routeToReport(reportId: number, options?: { workerId?: number }): Promise<ReportRouteOutput> {
     const report = await reportRepo.findById(reportId);
     if (!report) {
@@ -64,7 +53,7 @@ export const routingService = {
     let team: PositionedTeam | null = null;
     let teamSource: TeamSource | null = null;
 
-    // 0. Explicit worker — admin picked someone in the assign UI (preview or re-route).
+    
     if (options?.workerId) {
       const worker = await userRepo.findById(options.workerId);
       if (
@@ -78,7 +67,7 @@ export const routingService = {
       }
     }
 
-    // 1. Prefer the assigned worker — editing their coords recalculates the route.
+    
     if (!team) {
       const assigned = await prisma.assignment.findFirst({
         where: { reportId },
@@ -93,7 +82,7 @@ export const routingService = {
       }
     }
 
-    // 2. Otherwise the nearest team by *driving* time (Dijkstra), not straight-line.
+    
     let positioned: PositionedTeam[] = [];
     if (!team) {
       const workers = await userRepo.findWorkers();
@@ -110,9 +99,9 @@ export const routingService = {
       }
     }
 
-    // Always run planRoute so an unreachable report is classified as
-    // `off-network` / `no-route` (not conflated with "no workers"). When no
-    // crew could be resolved we use the first positioned worker as the origin.
+    
+    
+    
     const origin: GeoPoint | null = team
       ? { lat: team.lat, lng: team.lng }
       : positioned[0]

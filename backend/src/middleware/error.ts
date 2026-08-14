@@ -4,7 +4,7 @@ import { ZodError } from 'zod';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 
-/** 404 for unknown routes. */
+
 export function notFoundHandler(req: Request, res: Response): void {
   res.status(404).json({
     success: false,
@@ -12,14 +12,14 @@ export function notFoundHandler(req: Request, res: Response): void {
   });
 }
 
-/** Centralized error handler — last resort, keeps responses consistent. */
+
 export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction): void {
   if (res.headersSent) {
     next(err);
     return;
   }
 
-  // Request validation (zod)
+  
   if (err instanceof ZodError) {
     const fields: Record<string, string> = {};
     for (const issue of err.issues) {
@@ -29,7 +29,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     return;
   }
 
-  // Operational errors thrown by our code
+  
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
       success: false,
@@ -38,7 +38,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     return;
   }
 
-  // Prisma known errors → friendly messages
+  
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       res.status(409).json({ success: false, error: { message: 'A record with that value already exists.' } });
@@ -54,13 +54,13 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     }
   }
 
-  // Multer file-size limit
+  
   if (err instanceof Error && 'code' in err && (err as { code?: string }).code === 'LIMIT_FILE_SIZE') {
     res.status(413).json({ success: false, error: { message: 'File too large. Maximum size is 5 MB.' } });
     return;
   }
 
-  // Anything else → 500
+  
   console.error('💥 Unhandled error:', err);
   const message =
     env.NODE_ENV === 'production' ? 'Internal server error' : err instanceof Error ? err.message : 'Unknown error';

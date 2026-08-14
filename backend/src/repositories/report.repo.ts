@@ -36,9 +36,9 @@ export interface NearbyOpenReport {
   distance: number;
 }
 
-/** Data access for reports — the only place that touches the reports table family. */
+
 export const reportRepo = {
-  /** Creates a report + its PENDING status-history entry + location row in one transaction. */
+  
   async create(input: {
     userId: number;
     title: string;
@@ -127,8 +127,7 @@ export const reportRepo = {
     });
   },
 
-  /** Per-status counts for one citizen's reports — powers the dashboard summary cards.
-   *  Counts every report the user submitted, including ones they hid from their list. */
+  
   async statusCountsForUser(userId: number): Promise<StatusCounts> {
     const where = { userId };
     const [total, byStatus] = await Promise.all([
@@ -153,10 +152,7 @@ export const reportRepo = {
     };
   },
 
-  /**
-   * Finds open reports within `radiusM` of a point (bounding-box prefilter + Haversine),
-   * sorted nearest-first. Used by duplicate detection.
-   */
+  
   async findOpenNear(
     lat: number,
     lng: number,

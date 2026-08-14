@@ -1,19 +1,11 @@
-/**
- * Dijkstra's shortest-path algorithm over the OSM road graph.
- *
- * The frontier is a MIN-heap (the same `BinaryHeap` class that powers the
- * pothole MAX-heap priority queue, just with the opposite comparator), so every
- * node is expanded at most once and the run is O(E·log V). Edge weights are
- * travel time in seconds, so the returned route minimizes driving time; total
- * road distance is summed separately along the path.
- */
+
 import { BinaryHeap } from './heap.js';
 import type { RoadGraph } from './roadGraph.js';
 
 export interface RouteResult {
   distanceM: number;
   timeSeconds: number;
-  /** Node indices from source to target (inclusive). */
+  
   path: number[];
 }
 
@@ -47,7 +39,7 @@ export function shortestPath(graph: RoadGraph, source: number, target: number): 
     }
   }
 
-  if (!(dist[target]! < Infinity)) return null; // unreachable
+  if (!(dist[target]! < Infinity)) return null; 
 
   const path: number[] = [];
   for (let v = target; v !== -1; v = prev[v]!) {
@@ -56,7 +48,7 @@ export function shortestPath(graph: RoadGraph, source: number, target: number): 
   }
   path.reverse();
 
-  // Sum the road lengths along the optimal path.
+  
   let distanceM = 0;
   for (let i = 0; i < path.length - 1; i++) {
     const next = graph.edges[path[i]!]!.find((e) => e.to === path[i + 1]);

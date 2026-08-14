@@ -6,7 +6,7 @@ import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
 import type { ReportExportRow } from '../repositories/admin.repo.js';
 
-/** Export column headers — shared by all three formats. */
+
 const COLUMNS = [
   'Reference',
   'Title',
@@ -21,7 +21,7 @@ const COLUMNS = [
   'Updated At',
 ] as const;
 
-const CELL_WIDTHS = [14, 34, 14, 10, 26, 20, 8, 22, 10, 22, 22]; // pdfkit table columns
+const CELL_WIDTHS = [14, 34, 14, 10, 26, 20, 8, 22, 10, 22, 22]; 
 
 function toCells(row: ReportExportRow): string[] {
   return [
@@ -39,12 +39,12 @@ function toCells(row: ReportExportRow): string[] {
   ];
 }
 
-// ---------------------------------------------------------------------------
-// CSV (RFC 4180) — hand-rolled so exports need no runtime dependency.
-// ---------------------------------------------------------------------------
+
+
+
 
 function escapeCsv(value: string): string {
-  // Quote when the field contains a comma, quote, or newline; double inner quotes.
+  
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
@@ -382,7 +382,7 @@ export async function buildReceiptPdf(data: ReceiptData): Promise<Buffer> {
     const stripH = 32;
     doc.roundedRect(M, y, CW, stripH, 4).fill('#F8FAFC');
     doc.rect(M, y, 3, stripH).fill('#00B4D8');
-    const stripCols = [
+    const stripCols: [string, string][] = [
       ['Reference', data.ref],
       ['Submitted', formatWhen(data.createdAt)],
       ['Last updated', formatWhen(data.updatedAt)],

@@ -1,8 +1,4 @@
-/**
- * Backprop + Adam optimization loop used by the training script.
- * `trainOnBatch` accumulates per-sample gradients, steps once with Adam
- * (averaging by the batch size), and returns the mean cross-entropy loss.
- */
+
 import type { CnnModel } from './model.js';
 
 export function trainOnBatch(

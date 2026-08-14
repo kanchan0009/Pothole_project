@@ -1,7 +1,7 @@
 import { Severity, Status } from '@prisma/client';
 import { z } from 'zod';
 
-/** Multipart fields arrive as strings — preprocess empties to undefined, coerce numbers. */
+
 const optionalLatitude = z
   .preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().min(-90).max(90))
   .optional();
@@ -9,17 +9,13 @@ const optionalLongitude = z
   .preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().min(-180).max(180))
   .optional();
 
-/** Accepts "true"/"1"/true → true, everything else → false (multipart safe). */
+
 const ignoreDuplicate = z
   .preprocess((v) => v === true || v === 'true' || v === '1', z.boolean())
   .optional()
   .default(false);
 
-/**
- * Map captures are pre-approved screenshots of a selected map area — the AI
- * gate cannot judge a map tile for a pothole, so the reporter opts out of it.
- * Manual photo uploads are never allowed to skip detection.
- */
+
 const skipDetection = z
   .preprocess((v) => v === true || v === 'true' || v === '1', z.boolean())
   .optional()

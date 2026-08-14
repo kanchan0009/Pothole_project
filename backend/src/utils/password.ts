@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Strong-password policy:
- * ≥8 chars, upper + lower case, digit, and a special character.
- */
+
 export const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')

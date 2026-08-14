@@ -12,11 +12,11 @@ const server = app.listen(env.PORT, () => {
   console.log('==========================================');
 });
 
-// Graceful shutdown
+
 function shutdown(signal: string): void {
   console.log(`\n🛑 ${signal} received, shutting down…`);
   server.close(() => process.exit(0));
-  // Safety timeout in case connections linger
+  
   setTimeout(() => process.exit(1), 5000).unref();
 }
 

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { notificationService } from '../services/notification.service.js';
 import { notificationIdSchema } from '../validations/notification.schema.js';
 
-/** Thin HTTP layer — logic lives in notificationService. */
+
 export const notificationController = {
   async list(req: Request, res: Response) {
     const data = await notificationService.listForUser(req.user!.id);

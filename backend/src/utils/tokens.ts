@@ -13,8 +13,7 @@ export interface AccessTokenPayload {
 export interface RefreshTokenPayload {
   id: number;
   type: 'refresh';
-  /** Unique per-issuance nonce — two tokens for the same user are never identical,
-   *  which is what makes rotation/reuse detection meaningful. */
+  
   jti: string;
 }
 
@@ -25,7 +24,7 @@ export interface ResetTokenPayload {
 
 const REFRESH_TTL_REMEMBER = '30d';
 
-/** Short-lived access token carrying the auth identity. */
+
 export function signAccessToken(user: { id: number; email: string; role: Role }): string {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role } satisfies AccessTokenPayload,
@@ -34,7 +33,7 @@ export function signAccessToken(user: { id: number; email: string; role: Role })
   );
 }
 
-/** Rotatable refresh token. "Remember me" extends the session to 30 days. */
+
 export function signRefreshToken(userId: number, rememberMe: boolean): string {
   return jwt.sign(
     { id: userId, type: 'refresh', jti: crypto.randomUUID() } satisfies RefreshTokenPayload,
@@ -43,7 +42,7 @@ export function signRefreshToken(userId: number, rememberMe: boolean): string {
   );
 }
 
-/** One-time password-reset token (short-lived). */
+
 export function signResetToken(userId: number): string {
   return jwt.sign({ id: userId, type: 'reset' } satisfies ResetTokenPayload, env.JWT_REFRESH_SECRET, {
     expiresIn: '15m' as jwt.SignOptions['expiresIn'],
@@ -74,7 +73,7 @@ export function verifyResetToken(token: string): ResetTokenPayload {
   return { id: payload.id as number, type: 'reset' };
 }
 
-/** Stores only a SHA-256 hash of the refresh token in the DB. */
+
 export function hashRefreshToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }

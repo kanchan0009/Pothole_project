@@ -6,7 +6,7 @@ import { validateBody } from '../middleware/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { contactSchema } from '../validations/contact.schema.js';
 
-/** Public, unauthenticated endpoints. */
+
 export const publicRoutes = Router();
 
 publicRoutes.get('/health', (_req, res) => {

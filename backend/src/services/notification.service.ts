@@ -15,7 +15,7 @@ export interface NotificationList {
   total: number;
 }
 
-/** Citizen-facing notification feed (list + read state). */
+
 export const notificationService = {
   async listForUser(userId: number): Promise<NotificationList> {
     const [notifications, unreadCount, total] = await Promise.all([

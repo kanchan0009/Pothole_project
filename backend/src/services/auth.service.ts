@@ -28,7 +28,7 @@ export type PublicUser = Pick<
   'id' | 'name' | 'email' | 'phone' | 'role' | 'isActive' | 'avatarUrl' | 'createdAt'
 >;
 
-/** Removes sensitive fields before returning a user to the client. */
+
 export function toPublicUser(user: User): PublicUser {
   return {
     id: user.id,
@@ -65,7 +65,7 @@ export const authService = {
       role: 'USER',
     });
 
-    // Welcome notification
+    
     await prisma.notification.create({
       data: {
         userId: user.id,
@@ -158,7 +158,7 @@ export const authService = {
 
     const user = await userRepo.findById(payload.id);
     if (!user || user.refreshToken !== hashRefreshToken(refreshToken)) {
-      // Token reuse / mismatch → revoke the session entirely
+      
       if (user) await userRepo.setRefreshToken(user.id, null);
       throw ApiError.unauthorized('Refresh token no longer valid');
     }
@@ -175,27 +175,27 @@ export const authService = {
     try {
       const payload = verifyRefreshToken(refreshToken);
       const user = await userRepo.findById(payload.id);
-      // Only clear if the presented token matches the stored session
+      
       if (user && user.refreshToken === hashRefreshToken(refreshToken)) {
         await userRepo.setRefreshToken(user.id, null);
       }
     } catch {
-      /* already invalid — nothing to revoke */
+      
     }
   },
 
   async forgotPassword(email: string): Promise<void> {
     const user = await userRepo.findByEmail(email);
-    if (!user) return; // never reveal whether the email exists
+    if (!user) return; 
 
     if (!user.passwordHash) {
-      // User signed up with Google, shouldn't send reset link
+      
       return; 
     }
 
     const token = signResetToken(user.id);
     const resetLink = `http://localhost:5173/reset-password?token=${token}`;
-    // Dev delivery: log the link (wire up a real mailer/queue in production).
+    
     console.log(`🔑 Password reset for ${user.email}: ${resetLink}`);
   },
 
@@ -207,7 +207,7 @@ export const authService = {
     }
     const passwordHash = bcrypt.hashSync(password, 12);
     await userRepo.update(user.id, { passwordHash });
-    // Revoke all existing sessions after a password change.
+    
     await userRepo.setRefreshToken(user.id, null);
   },
 
@@ -260,11 +260,7 @@ export const authService = {
     return toPublicUser(updated);
   },
 
-  /**
-   * Soft-deletes an account: deactivates it and anonymizes every identifying field so
-   * the account can never be signed into again, while the user's reports, assignments
-   * and audit-log rows keep their referential integrity (a hard delete would break them).
-   */
+  
   async deleteAccount(userId: number): Promise<void> {
     const user = await userRepo.findById(userId);
     if (!user) {

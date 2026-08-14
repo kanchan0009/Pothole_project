@@ -3,7 +3,7 @@ import { detectionService } from '../services/detection.service.js';
 import { reportService } from '../services/report.service.js';
 import { listReportsSchema, reportIdSchema } from '../validations/report.schema.js';
 
-/** Thin HTTP layer — business logic lives in the report/detection services. */
+
 export const reportController = {
   async create(req: Request, res: Response) {
     const { ignoreDuplicate, skipDetection, ...input } = req.body;
@@ -32,7 +32,7 @@ export const reportController = {
   async mine(req: Request, res: Response) {
     const query = listReportsSchema.parse(req.query);
     const { sort, page, limit, ...filters } = query;
-    // Force the caller as the owner — a citizen can never read someone else's list.
+    
     const result = await reportService.list({ page, limit, sort, filters: { ...filters, userId: req.user!.id } });
     res.json({ success: true, data: result });
   },
@@ -54,7 +54,7 @@ export const reportController = {
     res.json({ success: true, data: { history } });
   },
 
-  /** Streams the owner/admin-only PDF receipt as an attachment. */
+  
   async receipt(req: Request, res: Response) {
     const { id } = reportIdSchema.parse(req.params);
     const { ref, pdf } = await reportService.getReceipt(req.user!.id, req.user!.role, id);
@@ -87,7 +87,7 @@ export const reportController = {
     res.json({ success: true, data: result });
   },
 
-  /** Step-2 AI gate — detect a pothole in the uploaded photo before the form proceeds. */
+  
   async detect(req: Request, res: Response) {
     const result = await detectionService.detect(req.file);
     res.json({ success: true, data: result });

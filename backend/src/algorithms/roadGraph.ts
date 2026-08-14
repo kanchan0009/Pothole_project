@@ -1,17 +1,4 @@
-/**
- * The road network Dijkstra routes over — a weighted, undirected graph built
- * from real OpenStreetMap road data.
- *
- * `scripts/fetch-road-network.ts` queries the Overpass API (plain HTTP) for the
- * Kathmandu valley, filters to car-passable `highway` classes, and persists the
- * result to `backend/data/road-graph.json`. At runtime `loadRoadGraph()` reads
- * that cache (fully offline); if the cache is missing it falls back to a live
- * fetch so the first request populates it.
- *
- * Edge weights are TRAVEL TIME in seconds (`distance / road-class speed`), so
- * Dijkstra minimizes driving time; each edge also carries its length in meters
- * so the route can report total distance. Roads are treated as two-way.
- */
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,20 +19,20 @@ export interface RoadNode {
 }
 
 export interface RoadEdge {
-  to: number; // node index
-  seconds: number; // travel time
-  distanceM: number; // road length
+  to: number; 
+  seconds: number; 
+  distanceM: number; 
 }
 
 export interface RoadGraph {
   bbox: { minLat: number; minLng: number; maxLat: number; maxLng: number };
-  nodes: RoadNode[]; // index = node id
-  edges: RoadEdge[][]; // adjacency list, parallel to nodes
+  nodes: RoadNode[]; 
+  edges: RoadEdge[][]; 
   fetchedAt: string;
   stats: { nodeCount: number; edgeCount: number; source: string };
 }
 
-/** Region covered by the graph — the Kathmandu valley demo area. */
+
 export const VALLEY_BBOX = {
   minLat: 27.63,
   minLng: 85.25,
@@ -55,17 +42,11 @@ export const VALLEY_BBOX = {
 
 const OVERPASS_URL = 'http://overpass-api.de/api/interpreter';
 const FETCH_TIMEOUT_MS = 90_000;
-/** The public Overpass instance is heavily loaded — retry 429/5xx with backoff. */
+
 const FETCH_ATTEMPTS = 5;
 const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 20_000];
 
-/**
- * The highway classes actually fetched. The public Overpass instance reliably
- * times out on the full 15-class list over the whole valley, so the fetch
- * focuses on the classes that carry most valley traffic (motorway/trunk barely
- * exist there; link/service roads are skippable for a routing demo). Roads of
- * these classes still route normally if present in a cached graph.
- */
+
 const FETCH_HIGHWAYS = [
   'primary',
   'secondary',
@@ -74,7 +55,7 @@ const FETCH_HIGHWAYS = [
   'residential',
 ] as const;
 
-/** Posted speed (km/h) per highway class — used to weight edges by time. */
+
 const HIGHWAY_SPEEDS: Record<string, number> = {
   motorway: 90,
   motorway_link: 60,
@@ -99,7 +80,7 @@ export function roadSpeed(highway: string | undefined): number {
   return (highway && HIGHWAY_SPEEDS[highway]) || DEFAULT_SPEED;
 }
 
-/** The subset of highway classes routed by vehicles. */
+
 const ROUTED_HIGHWAYS = [
   'motorway',
   'motorway_link',
@@ -125,11 +106,11 @@ export interface OverpassElement {
   id: number;
   tags?: Record<string, string>;
   nodes?: number[];
-  /** Overpass emits `lat`/`lon` (not `lng`) for node geometries. */
+  
   geometry?: { lat: number; lon: number }[];
 }
 
-/** Turns Overpass `way` elements into a graph. Shared node ids = shared junctions. */
+
 export function buildGraphFromOverpassElements(elements: OverpassElement[]): RoadGraph {
   const indexByOsmId = new Map<number, number>();
   const nodes: RoadNode[] = [];
@@ -154,7 +135,7 @@ export function buildGraphFromOverpassElements(elements: OverpassElement[]): Roa
     if (!geometry || !nodeIds || geometry.length < 2 || geometry.length !== nodeIds.length) continue;
     const speed = roadSpeed(way.tags.highway);
     for (let i = 0; i < geometry.length - 1; i++) {
-      // Overpass geometry uses `lon`; normalize to `lng` for the graph.
+      
       const a = { lat: geometry[i]!.lat, lng: geometry[i]!.lon };
       const b = { lat: geometry[i + 1]!.lat, lng: geometry[i + 1]!.lon };
       const aIdx = getNode(nodeIds[i]!, a.lat, a.lng);
@@ -169,8 +150,8 @@ export function buildGraphFromOverpassElements(elements: OverpassElement[]): Roa
     }
   }
 
-  // Degenerate roads (e.g. a path with zero routed segments) leave orphan nodes —
-  // drop nodes with no edges so Dijkstra doesn't dead-end on them.
+  
+  
   const alive: number[] = [];
   const remap = new Map<number, number>();
   for (let i = 0; i < nodes.length; i++) {
@@ -197,7 +178,7 @@ export function buildGraphFromOverpassElements(elements: OverpassElement[]): Roa
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** POSTs an Overpass query and returns the parsed JSON body (retries 429/5xx). */
+
 async function overpass(query: string): Promise<{ elements?: OverpassElement[] }> {
   let lastError: unknown;
   for (let attempt = 0; attempt < FETCH_ATTEMPTS; attempt++) {
@@ -237,7 +218,7 @@ async function overpass(query: string): Promise<{ elements?: OverpassElement[] }
   throw lastError ?? new Error('Overpass fetch failed');
 }
 
-/** Fetches the valley's routed road network from OSM (Overpass). */
+
 export async function fetchRoadNetwork(bbox = VALLEY_BBOX): Promise<RoadGraph> {
   const { minLat, minLng, maxLat, maxLng } = bbox;
   const query =
@@ -255,11 +236,7 @@ export async function saveRoadGraph(graph: RoadGraph): Promise<void> {
 
 let cached: RoadGraph | null = null;
 
-/**
- * Returns the road graph: from the on-disk cache, or — if `allowFetch` and no
- * cache exists — by fetching from Overpass and persisting it. The cache makes
- * routing work offline after the first successful fetch.
- */
+
 export async function loadRoadGraph(opts: { allowFetch?: boolean } = {}): Promise<RoadGraph> {
   if (cached) return cached;
   try {
@@ -267,7 +244,7 @@ export async function loadRoadGraph(opts: { allowFetch?: boolean } = {}): Promis
     cached = JSON.parse(raw) as RoadGraph;
     return cached;
   } catch {
-    // no cache — fall through to fetch (or error when disabled)
+    
   }
   if (opts.allowFetch === false) {
     throw new Error('Road graph is not cached; run scripts/fetch-road-network.ts or allow a fetch');
@@ -278,12 +255,12 @@ export async function loadRoadGraph(opts: { allowFetch?: boolean } = {}): Promis
   return cached;
 }
 
-/** Clears the module-level cache (used by tests and after a fresh fetch). */
+
 export function resetRoadGraphCache(): void {
   cached = null;
 }
 
-/** Nearest graph node to a coordinate (Haversine) — the Dijkstra snap point. */
+
 export function nearestNode(
   graph: RoadGraph,
   lat: number,

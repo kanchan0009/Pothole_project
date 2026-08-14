@@ -8,7 +8,7 @@ export const contactController = {
     res.status(201).json({ success: true, data: submission });
   },
 
-  /** Admin only — routed from admin.routes.ts under the adminOnly guard. */
+  
   async list(req: Request, res: Response): Promise<void> {
     const query = contactListSchema.parse(req.query);
     const data = await contactService.listMessages(query);

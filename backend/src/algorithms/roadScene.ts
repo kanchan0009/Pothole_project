@@ -1,10 +1,7 @@
-/**
- * Quick scene classification on a downscaled RGB sample.
- * Rejects faces, portraits, sky/grass-dominated frames before pothole logic runs.
- */
+
 
 export interface SceneAnalysis {
-  /** True when the photo plausibly shows asphalt / concrete road. */
+  
   isRoadLike: boolean;
   skinRatio: number;
   roadRatio: number;
@@ -17,7 +14,7 @@ export const SCENE_SAMPLE_SIZE = 64;
 const NOT_ROAD =
   'No pothole detected in this image. Please upload a clear photo of the pothole on the road surface — not a portrait, selfie, or indoor scene.';
 
-/** RGB + YCbCr skin rules — camera JPEGs often wash out RGB-only checks. */
+
 function isSkinPixel(r: number, g: number, b: number): boolean {
   if (r < 60 || g < 40 || b < 20) return false;
   if (r > 250 && g > 250 && b > 250) return false;
@@ -40,14 +37,14 @@ function isSkinPixel(r: number, g: number, b: number): boolean {
     }
   }
 
-  // YCbCr skin cluster — more reliable on webcam / phone JPEG captures.
+  
   const y = 0.299 * r + 0.587 * g + 0.114 * b;
   const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
   const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
   return y > 80 && cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173;
 }
 
-/** Gray, low-saturation tone — typical asphalt / concrete. */
+
 function isRoadPixel(r: number, g: number, b: number): boolean {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -67,7 +64,7 @@ function isGreenPixel(r: number, g: number, b: number): boolean {
   return g > 95 && g > r + 18 && g > b + 18;
 }
 
-/** Classifies whether an RGB buffer (64×64×3) looks like a road photo. */
+
 export function analyzeRoadScenePixels(data: Uint8Array, pixels: number): SceneAnalysis {
   let skin = 0;
   let road = 0;
@@ -95,7 +92,7 @@ export function analyzeRoadScenePixels(data: Uint8Array, pixels: number): SceneA
     return { isRoadLike: false, skinRatio, roadRatio, greenRatio, message: NOT_ROAD };
   }
 
-  // Road close-ups are mostly asphalt; portraits have skin but little neutral gray road.
+  
   if (roadRatio < 0.18 && skinRatio >= 0.02) {
     return { isRoadLike: false, skinRatio, roadRatio, greenRatio, message: NOT_ROAD };
   }

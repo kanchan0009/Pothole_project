@@ -14,13 +14,13 @@ export interface ContactMessageListQuery {
   search?: string;
 }
 
-/** Owns the `contact_messages` table (public contact form submissions). */
+
 export const contactRepo = {
   async create(input: ContactMessageInput) {
     return prisma.contactMessage.create({ data: input });
   },
 
-  /** Newest-first, optional free-text across name/email/subject. */
+  
   async list({ page, limit, search }: ContactMessageListQuery) {
     const where: any = {
       isReplied: false,

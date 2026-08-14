@@ -1,9 +1,4 @@
-/**
- * Geometry-based pothole validation on a downscaled grayscale grid.
- *
- * Used as a confirmation signal alongside the CNN — real photos vary in lighting,
- * so thresholds are tuned for phone uploads, not just synthetic training data.
- */
+
 import type { DetectionBox } from './detector.js';
 
 export const STRUCTURE_GRID = 64;
@@ -86,7 +81,7 @@ export function boxArea(box: DetectionBox): number {
   return box.width * box.height;
 }
 
-/** Strong dark blob — can support a borderline CNN on real phone photos. */
+
 export function isStrongPotholeStructure(result: StructureResult): boolean {
   return result.ok && result.depth >= 42 && result.clusterRatio >= 0.004;
 }

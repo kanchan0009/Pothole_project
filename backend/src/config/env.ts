@@ -1,16 +1,12 @@
-/**
- * Centralized, zod-validated environment configuration.
- * The process exits early if required variables are missing/invalid,
- * so the rest of the app can trust `env`.
- */
+
 import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
-  // Express "trust proxy" hops — set to 1 when running behind a reverse proxy
-  // (Railway/Render/Vercel/nginx) so rate limiting keys on the real client IP.
+  
+  
   TRUST_PROXY: z.coerce.number().int().min(0).max(1).default(0),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_ACCESS_SECRET: z.string().min(10, 'JWT_ACCESS_SECRET must be at least 10 chars'),

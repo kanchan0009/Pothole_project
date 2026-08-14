@@ -14,11 +14,7 @@ import { priorityQueueService } from './priorityQueue.service.js';
 import { reportService } from './report.service.js';
 import { routingService } from './routing.service.js';
 
-/**
- * Report workflow. Only these forward moves are legal; REJECTED is reachable
- * from any open state and is terminal. This enforces the spec's
- * PENDING → VERIFIED → ASSIGNED → IN_PROGRESS → COMPLETED chain.
- */
+
 const ALLOWED_NEXT: Record<Status, Status[]> = {
   PENDING: [Status.VERIFIED, Status.ASSIGNED, Status.REJECTED],
   VERIFIED: [Status.ASSIGNED, Status.IN_PROGRESS, Status.REJECTED],
@@ -35,9 +31,9 @@ interface WorkerRef {
 }
 
 export const adminService = {
-  // -------------------------------------------------------------------------
-  // Dashboard
-  // -------------------------------------------------------------------------
+  
+  
+  
 
   async dashboard(adminId: number) {
     const [counts, today, monthly, avgResolutionHours, recent, logs, notifications] = await Promise.all([
@@ -67,9 +63,9 @@ export const adminService = {
     };
   },
 
-  // -------------------------------------------------------------------------
-  // Analytics
-  // -------------------------------------------------------------------------
+  
+  
+  
 
   async statistics(period: AnalyticsPeriod, from?: Date, to?: Date) {
     const [timeSeries, severityDist, counts, topRoads, topAreas, heatmap, avgResolutionHours, aiAccuracy, topUsers] =
@@ -104,11 +100,11 @@ export const adminService = {
     };
   },
 
-  // -------------------------------------------------------------------------
-  // Report workflow
-  // -------------------------------------------------------------------------
+  
+  
+  
 
-  /** Applies a legal status transition with all its side effects in one transaction. */
+  
   async transitionStatus(
     adminId: number,
     reportId: number,
@@ -129,14 +125,14 @@ export const adminService = {
       throw ApiError.badRequest('A rejection reason is required');
     }
 
-    // Completion image — only meaningful (and processed) when completing.
+    
     let completionImageUrl: string | undefined;
     if (input.status === Status.COMPLETED && file) {
       validateImageFile(file);
       completionImageUrl = await processAndStore(file);
     }
 
-    // Assignment resolution happens before the transaction so failures abort cleanly.
+    
     let assignment: { userId: number | null; assignedTo: string } | undefined;
     if (input.status === Status.ASSIGNED) {
       assignment = await resolveAssignment(report, input);
@@ -183,7 +179,7 @@ export const adminService = {
     return reportService.getReport(reportId);
   },
 
-  /** Assigns a worker (explicit or nearest-available) and moves the report to ASSIGNED. */
+  
   async assignWorker(
     adminId: number,
     reportId: number,
@@ -225,15 +221,11 @@ export const adminService = {
     return reportService.getReport(reportId);
   },
 
-  // -------------------------------------------------------------------------
-  // Verify-AI
-  // -------------------------------------------------------------------------
+  
+  
+  
 
-  /**
-   * Admin verdict on the AI detection. Approving just records the verdict;
-   * rejecting also rejects the report with the chosen reason (the AI is wrong
-   * about it) so the citizen is told why via the normal notification flow.
-   */
+  
   async verifyAi(
     adminId: number,
     reportId: number,
@@ -264,28 +256,28 @@ export const adminService = {
     return this.transitionStatus(adminId, reportId, { status: Status.REJECTED, remarks: reason });
   },
 
-  // -------------------------------------------------------------------------
-  // Priority queue (max heap) + road routing
-  // -------------------------------------------------------------------------
+  
+  
+  
 
-  /** The max-heap priority queue, ordered — highest priority first. */
+  
   async priorityQueue() {
     return priorityQueueService.snapshot();
   },
 
-  /** Pops the highest-priority report, assigns the nearest crew, returns it. */
+  
   async dispatchNext(adminId: number) {
     return priorityQueueService.processNext(adminId);
   },
 
-  /** Dijkstra route from the crew to a report (recomputed on every call). */
+  
   async reportRoute(reportId: number, options?: { workerId?: number }) {
     return routingService.routeToReport(reportId, options);
   },
 
-  // -------------------------------------------------------------------------
-  // Users
-  // -------------------------------------------------------------------------
+  
+  
+  
 
   async listUsers(input: { page: number; limit: number; search?: string; role?: Role; active?: boolean; isWorker?: boolean }) {
     const { users, total } = await userRepo.list({
@@ -307,7 +299,7 @@ export const adminService = {
         role: u.role,
         isWorker: u.isWorker,
         isActive: u.isActive,
-        // Coordinates let admins move a crew and recalc the Dijkstra route.
+        
         latitude: u.latitude,
         longitude: u.longitude,
         reportCount: u._count.reports,
@@ -327,11 +319,11 @@ export const adminService = {
       throw ApiError.notFound('User not found');
     }
 
-    // Guard rails: an admin can never lock themselves out or demote themselves.
+    
     if (target.id === adminId && (input.role === Role.USER || input.isActive === false)) {
       throw ApiError.badRequest('You cannot demote or deactivate your own account');
     }
-    // Never deactivate the last remaining active admin.
+    
     if (target.role === Role.ADMIN && input.isActive === false) {
       const activeAdmins = await prisma.user.count({ where: { role: Role.ADMIN, isActive: true } });
       if (activeAdmins <= 1) {
@@ -362,9 +354,9 @@ export const adminService = {
     }));
   },
 
-  // -------------------------------------------------------------------------
-  // Audit trail
-  // -------------------------------------------------------------------------
+  
+  
+  
 
   async logs(limit = 20) {
     const logs = await adminRepo.recentLogs(Math.min(limit, 100));
@@ -377,18 +369,18 @@ export const adminService = {
     }));
   },
 
-  // -------------------------------------------------------------------------
-  // Exports
-  // -------------------------------------------------------------------------
+  
+  
+  
 
   async exportReports(filters: Parameters<typeof adminRepo.exportRows>[0]) {
     return adminRepo.exportRows(filters);
   },
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+
+
+
 
 async function processAndStore(file: Express.Multer.File): Promise<string> {
   const buffer = await processImage(file);
@@ -399,7 +391,7 @@ function ageDays(createdAt: Date): number {
   return Math.max(0, (Date.now() - createdAt.getTime()) / 86_400_000);
 }
 
-/** Nearest active worker to the report (Haversine). Null when the report has no coordinates. */
+
 async function nearestWorker(report: Report): Promise<WorkerRef | null> {
   if (report.latitude == null || report.longitude == null) return null;
   const workers = await userRepo.findWorkers();
@@ -482,7 +474,7 @@ function startOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-/** Maps AI-rejection keys to the user-facing labels stored on the report. */
+
 const AI_REASON_LABEL: Record<string, string> = {
   NOT_A_POTHOLY: 'Not a pothole',
   DUPLICATE: 'Duplicate report',

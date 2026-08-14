@@ -1,29 +1,20 @@
-/**
- * The CNN's primitive kernels — convolution, max-pooling, global average
- * pooling, dense, softmax — each with its forward pass and exact backward
- * (gradient) pass. These are real, from-scratch implementations: no library,
- * no native dependency. Backprop uses the standard chain rule; correctness is
- * pinned by finite-difference gradient checks in `tests/unit/cnn/backward.test.ts`.
- */
+
 import { id3 } from './tensor.js';
 
 const relu = (x: number): number => (x > 0 ? x : 0);
 
-// ---------------------------------------------------------------------------
-// Convolution (3×3, stride 1, SAME padding) + ReLU
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface ConvForward {
-  /** Activated (post-ReLU) output, shape [inH, inW, outC]. */
+  
   output: Float32Array;
-  /** 1 where the pre-activation was > 0 — the ReLU mask used by backward. */
+  
   mask: Uint8Array;
 }
 
-/**
- * Forward: `output = relu(input ⊛ W + b)` with SAME padding and stride 1.
- * `weights` is `[outC][inC][k][k]`, `bias` is `[outC]`.
- */
+
 export function conv2dRelu(
   input: Float32Array,
   inC: number,
@@ -72,12 +63,7 @@ export interface ConvGrads {
   dInput: Float32Array;
 }
 
-/**
- * Backward through the conv+ReLU pair.
- * `dOutput` is the gradient w.r.t. the *activated* output; the ReLU mask is
- * applied here, so the returned gradients are exactly ∂loss/∂W, ∂loss/∂b and
- * ∂loss/∂input for the full conv+ReLU block.
- */
+
 export function conv2dReluBackward(
   input: Float32Array,
   inC: number,
@@ -125,17 +111,17 @@ export function conv2dReluBackward(
   return { dW, dB, dInput };
 }
 
-// ---------------------------------------------------------------------------
-// Max pooling (2×2, stride 2)
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface PoolForward {
   output: Float32Array;
-  /** Flat index (into the input volume) of the max element per output cell. */
+  
   argmax: Int32Array;
 }
 
-/** Forward 2×2 max pool. `input` is [H, W, C]; output is [H/2, W/2, C]. */
+
 export function maxPool2d(
   input: Float32Array,
   H: number,
@@ -171,7 +157,7 @@ export function maxPool2d(
   return { output, argmax };
 }
 
-/** Scatter each output gradient to the argmax input cell. */
+
 export function maxPool2dBackward(
   dOutput: Float32Array,
   argmax: Int32Array,
@@ -184,11 +170,11 @@ export function maxPool2dBackward(
   return dInput;
 }
 
-// ---------------------------------------------------------------------------
-// Global average pooling — [H, W, C] → [C]
-// ---------------------------------------------------------------------------
 
-/** Mean-pool over the spatial dimensions. */
+
+
+
+
 export function globalAvgPool(input: Float32Array, H: number, W: number, C: number): Float32Array {
   const features = new Float32Array(C);
   const n = H * W;
@@ -202,7 +188,7 @@ export function globalAvgPool(input: Float32Array, H: number, W: number, C: numb
   return features;
 }
 
-/** Spread each feature gradient evenly back over its spatial cells. */
+
 export function globalAvgPoolBackward(
   dFeatures: Float32Array,
   H: number,
@@ -220,17 +206,17 @@ export function globalAvgPoolBackward(
   return dInput;
 }
 
-// ---------------------------------------------------------------------------
-// Global max pooling — the "peak" partner of average pooling
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface GlobalMaxPoolForward {
   output: Float32Array;
-  /** Flat index into the input volume of the max cell per channel. */
+  
   argmax: Int32Array;
 }
 
-/** Per-channel spatial max. `input` is [H, W, C]; output is [C]. */
+
 export function globalMaxPool(input: Float32Array, H: number, W: number, C: number): GlobalMaxPoolForward {
   const output = new Float32Array(C);
   const argmax = new Int32Array(C);
@@ -253,7 +239,7 @@ export function globalMaxPool(input: Float32Array, H: number, W: number, C: numb
   return { output, argmax };
 }
 
-/** Routes each channel's gradient to the argmax cell. */
+
 export function globalMaxPoolBackward(
   dOutput: Float32Array,
   argmax: Int32Array,
@@ -266,24 +252,24 @@ export function globalMaxPoolBackward(
   return dInput;
 }
 
-// ---------------------------------------------------------------------------
-// Global top-k mean pooling — a "peak" branch with a dense gradient.
-//
-// Plain max pooling routes each channel's gradient to a single pixel. On a
-// noisy 8×8 map that is dangerously sparse (and if the argmax lands on a
-// bright road pixel, the pothole gets no gradient at all that step). Averaging
-// the top-k activations keeps the peak emphasis but spreads gradient over k
-// cells per channel, so training signal reaches the blob reliably.
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 
 export interface GlobalTopKForward {
   output: Float32Array;
-  /** Per-channel indices of the top-k cells (row-major, sorted by value desc). */
+  
   indices: Int32Array;
   k: number;
 }
 
-/** Per-channel mean of the top-`k` spatial activations. */
+
 export function globalTopKPool(
   input: Float32Array,
   H: number,
@@ -294,11 +280,11 @@ export function globalTopKPool(
   const output = new Float32Array(C);
   const indices = new Int32Array(C * k);
   for (let c = 0; c < C; c++) {
-    // Collect (value, flatIndex) pairs for this channel and take the top-k.
+    
     const cells: Array<[number, number]> = [];
     for (let h = 0; h < H; h++) {
       for (let w = 0; w < W; w++) {
-        // Full flat index into the [H, W, C] volume (channel-stride aware).
+        
         cells.push([input[id3(h, w, c, W, C)] ?? 0, id3(h, w, c, W, C)]);
       }
     }
@@ -314,7 +300,7 @@ export function globalTopKPool(
   return { output, indices, k };
 }
 
-/** Splits each channel's gradient evenly across its top-k cells. */
+
 export function globalTopKPoolBackward(
   dOutput: Float32Array,
   indices: Int32Array,
@@ -332,11 +318,11 @@ export function globalTopKPoolBackward(
   return dInput;
 }
 
-// ---------------------------------------------------------------------------
-// Dense layer
-// ---------------------------------------------------------------------------
 
-/** `logits = input · W^T + b`. `weights` is [outC, inC], `bias` is [outC]. */
+
+
+
+
 export function dense(
   input: Float32Array,
   weights: Float32Array,
@@ -380,11 +366,11 @@ export function denseBackward(
   return { dW, dB, dInput };
 }
 
-// ---------------------------------------------------------------------------
-// Softmax + cross entropy
-// ---------------------------------------------------------------------------
 
-/** Numerically-stable softmax. */
+
+
+
+
 export function softmax(logits: Float32Array): Float32Array {
   let max = -Infinity;
   for (let i = 0; i < logits.length; i++) max = Math.max(max, logits[i] ?? 0);
@@ -399,13 +385,7 @@ export function softmax(logits: Float32Array): Float32Array {
   return out;
 }
 
-/**
- * Gaussian soft target for a class label. Severity is ordinal — a HIGH pothole
- * is "closer" to CRITICAL than to NONE — so the target spreads probability mass
- * onto adjacent classes (plus a small floor so no log(0)). Training against
- * these targets teaches the network the severity ordering instead of treating
- * every wrong class as equally wrong.
- */
+
 export function softTarget(label: number, n: number, sigma = 0.5): Float32Array {
   const target = new Float32Array(n);
   let sum = 0;
@@ -418,7 +398,7 @@ export function softTarget(label: number, n: number, sigma = 0.5): Float32Array 
   return target;
 }
 
-/** Cross-entropy between the predicted distribution and a (soft) target. */
+
 export function crossEntropyLoss(probs: Float32Array, target: Float32Array): number {
   let s = 0;
   for (let j = 0; j < probs.length; j++) {
@@ -427,7 +407,7 @@ export function crossEntropyLoss(probs: Float32Array, target: Float32Array): num
   return s;
 }
 
-/** dLoss/dLogits for softmax + cross-entropy = probs − target. */
+
 export function softmaxGrad(probs: Float32Array, target: Float32Array): Float32Array {
   const grad = new Float32Array(probs.length);
   for (let j = 0; j < probs.length; j++) grad[j] = (probs[j] ?? 0) - (target[j] ?? 0);

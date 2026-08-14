@@ -10,7 +10,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { buildReceiptPdf } from '../utils/exporters.js';
 import { reportRef } from '../utils/reportRef.js';
 
-/** Report + relations the receipt needs (user name and the status timeline). */
+
 type ReceiptReport = Prisma.ReportGetPayload<{
   include: {
     user: { select: { name: true } };
@@ -18,7 +18,7 @@ type ReceiptReport = Prisma.ReportGetPayload<{
   };
 }>;
 
-/** Status display order — used for the "status" list sort. */
+
 const STATUS_ORDER: Status[] = [
   Status.PENDING,
   Status.VERIFIED,
@@ -31,14 +31,14 @@ const STATUS_ORDER: Status[] = [
 export interface NearbyReportDTO {
   id: number;
   title: string;
-  distance: number; // meters
+  distance: number; 
   imageUrl: string;
   status: Status;
   severity: Severity;
   createdAt: string;
 }
 
-/** Flat report row as returned to clients. */
+
 export interface ReportListItem {
   id: number;
   userId: number;
@@ -71,7 +71,7 @@ export interface ReportListItem {
   updatedAt: string;
 }
 
-/** Report detail = list row + nested location/history/assignments. */
+
 export interface ReportDetail extends ReportListItem {
   location?: unknown;
   history?: unknown[];
@@ -80,10 +80,7 @@ export interface ReportDetail extends ReportListItem {
 
 type CreateResult = { ok: true; report: ReportDetail } | { ok: false; reason: 'duplicate'; nearbyReport: NearbyReportDTO };
 
-/**
- * Records a blocked duplicate attempt in the reporter's notification history,
- * so "Duplicate location / image" events persist alongside the in-session toast.
- */
+
 async function notifyDuplicate(userId: number, message: string): Promise<void> {
   await prisma.notification.create({
     data: { userId, title: 'Duplicate report', message },
@@ -113,10 +110,10 @@ export const reportService = {
     }
     validateImageFile(file);
 
-    // Process image first to validate content & calculate perceptual hash
+    
     const processed = await processImage(file);
     const imageHash = await computeImageHash(processed);
-// Duplicate image check: reject if identical/similar image was uploaded for an open report
+
 if (imageHash) {
   const openReportsWithHash = await prisma.report.findMany({
     where: {
@@ -143,7 +140,7 @@ if (imageHash) {
   }
 }
 
-    // Location duplicate detection: check GPS distance or address match
+    
     let duplicate = false;
     let confirmedDuplicateId: number | undefined;
     if (input.latitude != null && input.longitude != null) {
@@ -283,7 +280,7 @@ if (imageHash) {
     const { reports, total } = await reportRepo.findMany({ filters, orderBy, page, limit });
     let items = reports.map(toListItem);
 
-    // Severity/status sort use weights (enum alphabetic order is meaningless).
+    
     if (sort === 'severity') {
       items = [...items].sort((a, b) => SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity]);
     } else if (sort === 'status') {
@@ -298,7 +295,7 @@ if (imageHash) {
     };
   },
 
-  /** Status counts scoped to one citizen — backs the dashboard summary cards. */
+  
   async mineStats(userId: number) {
     return reportRepo.statusCountsForUser(userId);
   },
@@ -319,11 +316,7 @@ if (imageHash) {
     return toDetail(report);
   },
 
-  /**
-   * Official PDF receipt for one report. Only the reporter or an admin may
-   * download it; the citizen-facing FR-20 receipt embeds the stored before/after
-   * photos and the authoritative status timeline from the database.
-   */
+  
   async getReceipt(actorId: number, role: Role, id: number): Promise<{ ref: string; pdf: Buffer }> {
     const report = (await reportRepo.findById(id, {
       user: { select: { name: true } },
@@ -430,7 +423,7 @@ if (imageHash) {
 
     await reportRepo.update(id, data);
 
-    // Keep the normalized Location row in sync when coordinates change.
+    
     if (input.latitude != null && input.longitude != null) {
       const location = await prisma.location.findUnique({ where: { reportId: id } });
       const locData = {
@@ -500,9 +493,9 @@ if (imageHash) {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+
+
+
 
 async function processAndStore(file: Express.Multer.File): Promise<string> {
   const buffer = await processImage(file);
@@ -568,7 +561,7 @@ function toDetail(
 
 const DAY_MS = 86_400_000;
 
-/** A citizen confirmed an existing report — +1 confirmation, priority recomputed. */
+
 async function bumpConfirmation(reportId: number): Promise<void> {
   const report = await prisma.report.findUniqueOrThrow({ where: { id: reportId } });
   const confirmations = report.confirmations + 1;

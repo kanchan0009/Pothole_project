@@ -6,22 +6,16 @@ import { processImage, storeImage, validateImageFile } from '../algorithms/image
 import { ApiError } from '../utils/ApiError.js';
 
 export interface DetectOutput extends DetectionResult {
-  /** Annotated preview (detection box drawn on) — null when nothing was detected. */
+  
   previewUrl: string | null;
 }
 
-/**
- * Which detector serves the pipeline. The CNN is the default; the heuristic
- * detector (used by unit tests) can be selected with `ROADGUARD_DETECTOR=heuristic`.
- */
+
 function resolveDetector(): PotholeDetector {
   return process.env.ROADGUARD_DETECTOR === 'heuristic' ? heuristicDetector : cnnDetector;
 }
 
-/**
- * Detection pipeline: validate → compress → detect → annotate.
- * Shared by the POST /reports/detect gate and report creation.
- */
+
 export const detectionService = {
   async detect(file: Express.Multer.File | undefined): Promise<DetectOutput> {
     if (!file) {
@@ -36,7 +30,7 @@ export const detectionService = {
     };
   },
 
-  /** Runs detection on an already-processed buffer; annotates only when detected. */
+  
   async analyze(
     processed: Buffer
   ): Promise<{ result: DetectionResult; annotated: Buffer | null }> {
@@ -46,7 +40,7 @@ export const detectionService = {
   },
 };
 
-/** Draws the detection box onto the image by compositing an SVG rectangle. */
+
 export async function annotateBox(buffer: Buffer, box: DetectionBox): Promise<Buffer> {
   const meta = await sharp(buffer).metadata();
   const width = meta.width ?? 0;

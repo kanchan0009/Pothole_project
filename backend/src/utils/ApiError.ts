@@ -1,8 +1,4 @@
-/**
- * Operational error type. Controllers/services throw ApiError for any
- * expected failure; the centralized error middleware turns it into a
- * consistent JSON envelope with the right HTTP status code.
- */
+
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;

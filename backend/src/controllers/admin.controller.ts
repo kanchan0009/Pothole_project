@@ -10,12 +10,13 @@ import {
   listUsersSchema,
   statisticsSchema,
   updateUserSchema,
+  exportSchema,
 } from '../validations/admin.schema.js';
 import { listReportsSchema, reportIdSchema } from '../validations/report.schema.js';
 
-/** Thin HTTP layer — business logic lives in the admin/auth/report services. */
+
 export const adminController = {
-  /** Admin-only login — rejects non-ADMIN accounts with 403. */
+  
   async login(req: Request, res: Response) {
     const result = await authService.login(req.body, 'ADMIN');
     res.json({ success: true, data: result });
@@ -32,7 +33,7 @@ export const adminController = {
     res.json({ success: true, data });
   },
 
-  /** All reports (admin sees the full dataset, no caller-scoping). */
+  
   async reports(req: Request, res: Response) {
     const query = listReportsSchema.parse(req.query);
     const { sort, page, limit, ...filters } = query;
@@ -46,7 +47,7 @@ export const adminController = {
     res.json({ success: true, data: { report } });
   },
 
-  /** Workflow transition — multipart so a completion image can ride along. */
+  
   async updateStatus(req: Request, res: Response) {
     const { id } = reportIdSchema.parse(req.params);
     const report = await adminService.transitionStatus(req.user!.id, id, req.body, req.file);
@@ -67,19 +68,19 @@ export const adminController = {
     res.json({ success: true, message: 'AI verification recorded', data: { report } });
   },
 
-  /** Max-heap priority queue (ordered, highest first). */
+  
   async priorityQueue(_req: Request, res: Response) {
     const data = await adminService.priorityQueue();
     res.json({ success: true, data });
   },
 
-  /** Dispatch the peak of the max heap — assign the nearest crew and move to ASSIGNED. */
+  
   async dispatchNext(req: Request, res: Response) {
     const data = await adminService.dispatchNext(req.user!.id);
     res.json({ success: true, message: data.processed ? 'Highest-priority report dispatched' : 'Queue is empty', data });
   },
 
-  /** Dijkstra route from the crew to a report (recomputed fresh each call). */
+  
   async reportRoute(req: Request, res: Response) {
     const { id } = reportIdSchema.parse(req.params);
     const { workerId } = reportRouteQuerySchema.parse(req.query);
@@ -110,7 +111,7 @@ export const adminController = {
     res.json({ success: true, data: { logs } });
   },
 
-  /** Streams the chosen export format. */
+  
   async exportReports(req: Request, res: Response) {
     const { format, ...filters } = exportSchema.parse({ format: req.params.format, ...req.query });
     const rows = await adminService.exportReports(filters);
