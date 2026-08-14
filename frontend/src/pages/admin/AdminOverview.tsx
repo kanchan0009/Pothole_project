@@ -11,7 +11,7 @@ import {
   FaCog,
   FaFileExport,
   FaHourglassHalf,
-  FaMapMarkedAlt,
+  FaChartBar,
   FaRobot,
   FaUserCog,
   FaUsers,
@@ -53,13 +53,13 @@ export function AdminOverview() {
 
   const activity = useMemo(() => dash?.recentActivity ?? [], [dash]);
 
-  // Derived metrics for SparklineCards
+
   const totalReports = dash?.counts?.total ?? 0;
   const pendingReports = dash?.counts?.pending ?? 0;
   const inProgress = (dash?.counts?.assigned ?? 0) + (dash?.counts?.inProgress ?? 0);
   const completed = dash?.counts?.completed ?? 0;
 
-  // Use today vs monthly for a fake "trend" or progress
+
   const todayProgress = totalReports > 0 ? ((dash?.today ?? 0) / totalReports) * 100 : 0;
   const pendingProgress = totalReports > 0 ? (pendingReports / totalReports) * 100 : 0;
 
@@ -75,8 +75,8 @@ export function AdminOverview() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
-      
-      {/* Hero Section */}
+
+      { }
       <DashboardHero
         title="Welcome back, Admin"
         subtitle="Here's your platform performance overview"
@@ -111,7 +111,7 @@ export function AdminOverview() {
         ]}
       />
 
-      {/* KPI Cards Row */}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         <SparklineCard
           label="Total Reports"
@@ -164,7 +164,7 @@ export function AdminOverview() {
         />
       </div>
 
-      {/* Main Charts & Activity Row */}
+      { }
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <ChartCard title="Report Volume Analytics" subtitle="Comprehensive report submission metrics">
@@ -174,9 +174,8 @@ export function AdminOverview() {
                   <button
                     key={p}
                     onClick={() => setPeriod(p as StatisticsPeriod)}
-                    className={`rounded-md px-3 py-1.5 transition ${
-                      period === p ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary'
-                    }`}
+                    className={`rounded-md px-3 py-1.5 transition ${period === p ? 'bg-primary text-white' : 'text-primary/60 hover:text-primary'
+                      }`}
                   >
                     {p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
@@ -190,7 +189,7 @@ export function AdminOverview() {
             )}
           </ChartCard>
         </div>
-        
+
         <div>
           <Card className="h-full p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -232,39 +231,38 @@ export function AdminOverview() {
         </div>
       </div>
 
-      {/* Quick Actions & Top Regions Row */}
+      { }
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Card className="h-full p-6">
-            <h3 className="mb-6 text-base font-extrabold text-primary">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">
               <QuickActionCard
                 title="Manage Users"
                 subtitle="Review pending citizen accounts"
                 icon={<FaUsers />}
                 bgColor="bg-dashboard-blue"
-                onClick={() => {}}
+                onClick={() => { }}
               />
               <QuickActionCard
-                title="View Heatmap"
-                subtitle="Analyze hotspot locations"
-                icon={<FaMapMarkedAlt />}
+                title="View Analytics"
+                subtitle="Analyze report data"
+                icon={<FaChartBar />}
                 bgColor="bg-dashboard-green"
-                onClick={() => {}}
+                onClick={() => { }}
               />
               <QuickActionCard
                 title="Export Reports"
                 subtitle="Generate CSV analytics data"
                 icon={<FaFileExport />}
                 bgColor="bg-dashboard-orange"
-                onClick={() => {}}
+                onClick={() => { }}
               />
               <QuickActionCard
                 title="System Settings"
                 subtitle="Configure app parameters"
                 icon={<FaCog />}
                 bgColor="bg-dashboard-purple"
-                onClick={() => {}}
+                onClick={() => { }}
               />
             </div>
           </Card>
@@ -306,7 +304,7 @@ export function AdminOverview() {
         </div>
       </div>
 
-      {/* Pending Actions Footer */}
+      { }
       <div>
         <h3 className="mb-4 text-base font-extrabold text-primary">Pending Actions</h3>
         <div className="grid gap-4 md:grid-cols-3">
@@ -323,7 +321,7 @@ export function AdminOverview() {
               Review Now &rarr;
             </Link>
           </Card>
-          
+
           <Card className="relative overflow-hidden border-none bg-dashboard-blue/10 p-5 shadow-none transition hover:bg-dashboard-blue/20">
             <span className="absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full bg-dashboard-blue text-xs font-bold text-white">
               {dash?.counts?.assigned ?? 0}

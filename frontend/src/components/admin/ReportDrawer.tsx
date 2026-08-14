@@ -27,7 +27,7 @@ type ActionMode =
   | "remove"
   | null;
 
-/** Which workflow actions are offered per status (mirrors the backend state machine). */
+
 const STATUS_ACTIONS: Partial<
   Record<ReportStatus, Exclude<ActionMode, null>[]>
 > = {
@@ -35,7 +35,7 @@ const STATUS_ACTIONS: Partial<
   VERIFIED: ["assign", "reject"],
   ASSIGNED: ["start", "reject"],
   IN_PROGRESS: ["complete", "reject"],
-  // Once repaired, a Completed report can be removed from the active list.
+  
   COMPLETED: ["remove"],
 };
 
@@ -48,7 +48,7 @@ const ACTION_LABEL: Record<Exclude<ActionMode, null>, string> = {
   remove: "Remove report",
 };
 
-/** Multipart body for field-only transitions. */
+
 function formOf(obj: Record<string, string>): FormData {
   const f = new FormData();
   for (const [k, v] of Object.entries(obj)) if (v) f.append(k, v);
@@ -87,11 +87,11 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
 
   const report = data?.report;
 
-  /** When picking a worker manually, preview the Dijkstra route to that crew. */
+  
   const previewWorkerId =
     action === "assign" && workerId !== "" ? Number(workerId) : undefined;
 
-  // Dijkstra route crew → pothole, recomputed when the assigned or selected worker changes.
+  
   const { data: routeData } = useQuery({
     queryKey: ["admin", "report-route", reportId, previewWorkerId ?? "default"],
     queryFn: () =>
@@ -102,7 +102,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
     enabled: !!reportId && !!report?.latitude && !!report?.longitude,
   });
 
-  // Reset transient form state whenever the drawer opens for a new report.
+  
   useEffect(() => {
     setAction(null);
     setRemarks("");
@@ -242,7 +242,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-background shadow-2xl"
           >
-            {/* Header */}
+            {}
             <div className="flex items-center justify-between gap-3 border-b border-white/60 bg-white/80 px-5 py-4 backdrop-blur">
               <div>
                 <h2 className="text-lg font-extrabold text-primary">
@@ -266,7 +266,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
               </button>
             </div>
 
-            {/* Body */}
+            {}
             <div className="flex-1 overflow-y-auto px-5 py-5">
               {isLoading || !report ? (
                 <div className="space-y-4">
@@ -276,7 +276,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Images */}
+                  {}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <figure>
                       <img
@@ -326,7 +326,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </Card>
                   )}
 
-                  {/* Rejection reason */}
+                  {}
                   {report.status === "REJECTED" && report.rejectionReason && (
                     <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
                       <p className="flex items-center gap-2 text-sm font-bold text-danger">
@@ -338,7 +338,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </div>
                   )}
 
-                  {/* AI detection + Verify-AI */}
+                  {}
                   {report.confidenceScore != null && (
                     <Card className="p-4">
                       <p className="mb-3 flex items-center gap-2 text-sm font-bold text-primary">
@@ -530,7 +530,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </Card>
                   )}
 
-                  {/* Details */}
+                  {}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Info label="Title" value={report.title} span />
                     <Info label="Road name" value={report.roadName} />
@@ -555,7 +555,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     <Info label="Description" value={report.description} span />
                   </div>
 
-                  {/* Dijkstra route — crew → pothole (recomputed on every view) */}
+                  {}
                   {report.latitude != null && report.longitude != null && (
                     <div>
                       {!routeData ? (
@@ -566,7 +566,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </div>
                   )}
 
-                  {/* Assignment */}
+                  {}
                   {report.assignments && report.assignments.length > 0 && (
                     <Card className="p-4">
                       <p className="mb-2 text-sm font-bold text-primary">
@@ -584,7 +584,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </Card>
                   )}
 
-                  {/* Timeline */}
+                  {}
                   {report.history && report.history.length > 0 && (
                     <Card className="p-4">
                       <p className="mb-4 text-sm font-bold text-primary">
@@ -617,7 +617,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </Card>
                   )}
 
-                  {/* Workflow actions */}
+                  {}
                   {(STATUS_ACTIONS[report.status] ?? []).length > 0 && (
                     <Card className="p-4">
                       <p className="mb-3 text-sm font-bold text-primary">
@@ -777,7 +777,7 @@ export function ReportDrawer({ reportId, onClose }: ReportDrawerProps) {
                     </Card>
                   )}
 
-                  {/* Delete */}
+                  {}
                   <div className="flex items-center justify-between rounded-xl border border-danger/20 bg-white p-4">
                     <div>
                       <p className="text-sm font-bold text-danger">

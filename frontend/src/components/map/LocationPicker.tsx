@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLng } from '../../lib/geocode';
 
-/** Kathmandu valley — sensible default view for a Nepal-based system. */
+
 const DEFAULT_CENTER: [number, number] = [27.7172, 85.324];
 
-/** Custom CSS pin (avoids the broken default marker asset path in bundlers). */
+
 const pinIcon = L.divIcon({
   className: 'rg-map-pin',
   html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#DC3545;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.45);"></div>',

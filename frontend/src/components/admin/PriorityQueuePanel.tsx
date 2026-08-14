@@ -10,14 +10,10 @@ import { Card } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { useToast } from '../ui/Toast';
 
-/** How many queue rows to render (the heap itself holds every open report). */
+
 const DISPLAY_LIMIT = 4;
 
-/**
- * The Max Heap priority queue, rendered in priority order. The crown marks the
- * peak — the report the queue would dispatch next. "Dispatch next" pops it,
- * resolves the nearest crew by road (Dijkstra) and moves it to ASSIGNED.
- */
+
 export function PriorityQueuePanel() {
   const toast = useToast();
   const queryClient = useQueryClient();

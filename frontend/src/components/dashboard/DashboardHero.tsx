@@ -21,7 +21,7 @@ interface DashboardHeroProps {
 export function DashboardHero({ title, subtitle, dateStr, stats, onRefresh, onExport }: DashboardHeroProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#0f284e] p-6 text-white shadow-lg lg:p-8">
-      {/* Decorative abstract wave/shape */}
+      {}
       <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 opacity-10">
         <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full object-cover">
           <circle cx="200" cy="200" r="150" stroke="white" strokeWidth="40" />

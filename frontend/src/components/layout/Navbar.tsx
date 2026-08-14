@@ -81,7 +81,7 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile toggle */}
+        {}
         <button
           className="rounded-lg p-2 text-primary md:hidden"
           onClick={() => setOpen((v) => !v)}

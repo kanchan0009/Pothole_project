@@ -1,6 +1,6 @@
 import type { ReportStatus, Severity } from "../types";
 
-/** Display metadata per report status — colors follow the spec. */
+
 export const STATUS_META: Record<
   ReportStatus,
   {
@@ -72,7 +72,7 @@ export const STATUS_ORDER: ReportStatus[] = [
   "REJECTED",
 ];
 
-/** Severity weights used for priority scoring (mirrors backend). */
+
 export const SEVERITY_WEIGHT: Record<Severity, number> = {
   LOW: 10,
   MEDIUM: 20,
@@ -80,10 +80,10 @@ export const SEVERITY_WEIGHT: Record<Severity, number> = {
   CRITICAL: 40,
 };
 
-/** Maximum distance (meters) that flags a duplicate report. */
+
 export const DUPLICATE_RADIUS_M = 20;
 
-/** Preset rejection reasons offered to the admin when rejecting a report. */
+
 export const REJECT_REASONS = [
   "Duplicate report",
   "Invalid image",

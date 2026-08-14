@@ -28,7 +28,7 @@ export interface ReportListParams {
 export interface NearbyReport {
   id: number;
   title: string;
-  distance: number; // meters
+  distance: number; 
   imageUrl: string;
   status: ReportStatus;
   severity: Severity;
@@ -44,16 +44,16 @@ export type CreateReportResult =
   | { ok: true; report: Report }
   | { ok: false; reason: 'duplicate'; nearbyReport: NearbyReport };
 
-/** The Axios response interceptor unwraps { success, data } → data. */
+
 export const reportsApi = {
   list: (params: ReportListParams = {}) =>
     apiClient.get('/reports', { params }).then((r) => r as unknown as Paginated<Report>),
 
-  /** The caller's own reports — the backend forces userId, never public. */
+  
   mine: (params: ReportListParams = {}) =>
     apiClient.get('/reports/mine', { params }).then((r) => r as unknown as Paginated<Report>),
 
-  /** Per-status counts for the caller's reports (dashboard summary cards). */
+  
   mineStats: () =>
     apiClient.get('/reports/mine/stats').then((r) => r as unknown as { status: StatusCounts }),
 
@@ -63,11 +63,7 @@ export const reportsApi = {
   timeline: (id: number) =>
     apiClient.get(`/reports/${id}/timeline`).then((r) => r as unknown as { history: StatusHistoryEntry[] }),
 
-  /**
-   * Downloads the official PDF receipt for the caller's report. The plain
-   * <a href> can't carry the Authorization header, so we fetch a blob through
-   * the shared client (which attaches the token) and save it locally.
-   */
+  
   receipt: async (id: number) => {
     const data = (await apiClient.get(`/reports/${id}/receipt`, { responseType: 'blob' })) as unknown as Blob;
     if (!(data instanceof Blob)) return;
@@ -86,7 +82,7 @@ export const reportsApi = {
       .post('/reports/check-duplicate', { latitude, longitude })
       .then((r) => r as unknown as CheckDuplicateResult),
 
-  /** Step-2 AI gate — detect a pothole in the chosen photo before the form proceeds. */
+  
   detect: async (file: File) => {
     const form = new FormData();
     const name = file.name?.trim() || "photo.jpg";
@@ -112,6 +108,6 @@ export const reportsApi = {
 
   remove: (id: number) => apiClient.delete(`/reports/${id}`),
 
-  /** Permanently deletes the caller's report (owner-only). */
+  
   removeForUser: (id: number) => apiClient.post(`/reports/${id}/remove-user`),
 };

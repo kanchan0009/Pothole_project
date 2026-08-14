@@ -1,21 +1,11 @@
-/**
- * Place search for the map page.
- *
- * Suggestions come from two sources:
- *  1. A curated list of well-known Kathmandu-valley locations (instant, offline).
- *  2. OpenStreetMap's public Nominatim geocoder for anything else (debounced
- *     by the caller, silently ignored on failure).
- *
- * Results are normalized into {@link PlaceSuggestion} so the SearchBar can
- * render and select them uniformly.
- */
+
 
 export interface PlaceSuggestion {
-  /** Stable key for React lists / dedupe. */
+  
   id: string;
-  /** Primary label (place name). */
+  
   label: string;
-  /** Secondary context (district / full address). */
+  
   sublabel: string;
   lat: number;
   lng: number;
@@ -29,7 +19,7 @@ export interface CuratedPlace {
   lng: number;
 }
 
-/** Curated Kathmandu-valley locations with approximate centroids. */
+
 export const KATHMANDU_PLACES: CuratedPlace[] = [
   { name: "Kathmandu", district: "Kathmandu", lat: 27.7172, lng: 85.324 },
   {
@@ -79,7 +69,7 @@ export function toSuggestion(p: CuratedPlace): PlaceSuggestion {
   };
 }
 
-/** Sync match against the curated list — prefix matches rank first. */
+
 export function searchLocalPlaces(query: string): PlaceSuggestion[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
@@ -98,11 +88,7 @@ export function searchLocalPlaces(query: string): PlaceSuggestion[] {
     .map((x) => x.s);
 }
 
-/**
- * Async geocode via Nominatim (Nepal only). Resolves to [] on any failure so
- * the search UI never hard-fails. Pass an AbortController signal to cancel
- * in-flight requests when the user keeps typing.
- */
+
 export async function searchRemotePlaces(
   query: string,
   signal?: AbortSignal,
@@ -170,10 +156,7 @@ export async function searchRemotePlaces(
   }
 }
 
-/**
- * Merges local + remote suggestions, deduping by place name, keeping curated
- * results first. Caps the list for the dropdown.
- */
+
 export function mergePlaces(
   local: PlaceSuggestion[],
   remote: PlaceSuggestion[],

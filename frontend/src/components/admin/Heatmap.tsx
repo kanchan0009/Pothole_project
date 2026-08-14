@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 
 type HeatPoint = [number, number, number];
 
-/** Mounts/unmounts the heat layer for the current point set. */
+
 function HeatLayer({ points }: { points: HeatPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -16,7 +16,7 @@ function HeatLayer({ points }: { points: HeatPoint[] }) {
       blur: 16,
       maxZoom: 17,
       minOpacity: 0.4,
-      // Cool (light traffic) → hot (heavy complaint density)
+      
       gradient: {
         0.2: '#48CAE4',
         0.4: '#00B4D8',
@@ -34,7 +34,7 @@ function HeatLayer({ points }: { points: HeatPoint[] }) {
   return null;
 }
 
-/** Heat-map of complaint density from [lat, lng, weight] points. */
+
 export function Heatmap({ points }: { points: HeatPoint[] }) {
   if (!points.length) {
     return (

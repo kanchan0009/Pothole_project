@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Shared strong-password rule (mirrors the backend policy). */
+
 export const passwordRule = z
   .string()
   .min(8, 'At least 8 characters')

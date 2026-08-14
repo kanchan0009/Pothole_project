@@ -20,7 +20,7 @@ export interface LoginInput {
   rememberMe?: boolean;
 }
 
-/** The Axios response interceptor unwraps { success, data } → data. */
+
 async function post<T>(url: string, body: unknown): Promise<T> {
   return (await apiClient.post(url, body)) as unknown as T;
 }

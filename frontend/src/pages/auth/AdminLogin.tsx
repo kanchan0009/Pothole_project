@@ -14,7 +14,7 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-/** Admin-only sign-in. Only ADMIN accounts are accepted (403 otherwise). */
+
 export function AdminLogin() {
   const { adminLogin } = useAuth();
   const navigate = useNavigate();

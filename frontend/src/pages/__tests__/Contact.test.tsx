@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-// Hoisted so the mock factory (which vitest hoists above imports) can see them.
+
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 const contactApi = vi.hoisted(() => ({ submitMessage: vi.fn() }));
 
@@ -24,8 +24,7 @@ function fillForm(values: typeof VALID = VALID) {
   fireEvent.change(screen.getByLabelText('Message'), { target: { value: values.message } });
 }
 
-/** jsdom quirk: fireEvent.click on a submit button does not reliably dispatch
- * the form's submit event — dispatch it on the form directly (RTL convention). */
+
 function submitForm() {
   const form = document.querySelector('form');
   if (!form) throw new Error('Expected a <form> in the document');

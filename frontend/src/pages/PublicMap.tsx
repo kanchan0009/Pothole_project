@@ -22,32 +22,28 @@ import { captureMapArea, nearbyFilter, saveMapCaptureDraft, type BoxRect } from 
 import type { PlaceSuggestion } from '../lib/mapPlaces';
 import type { MapCaptureDraft, Report, ReportStatus, Severity } from '../types';
 
-/** Kathmandu valley — sensible default view for a Nepal-based system. */
+
 const DEFAULT_CENTER: [number, number] = [27.7172, 85.324];
-const MAP_LIMIT = 50; // list endpoint caps limit at 50 per request
-/** Radius (m) around the selected location used for "nearby potholes". */
+const MAP_LIMIT = 50; 
+
 const NEARBY_RADIUS_M = 2500;
 
-/**
- * Map-page status colors — the spec's four canonical badges plus sensible
- * colours for the two workflow statuses the domain adds. Kept local so the
- * global STATUS_META (used by dashboards) is untouched.
- */
+
 const MAP_STATUS_COLORS: Record<ReportStatus, string> = {
-  PENDING: '#FFA500', // orange
-  IN_PROGRESS: '#2563EB', // blue
-  COMPLETED: '#28A745', // green
-  REJECTED: '#DC3545', // red
-  VERIFIED: '#00B4D8', // cyan
-  ASSIGNED: '#7C3AED', // purple
-  REMOVED: "#DC3545", // red
+  PENDING: '#FFA500', 
+  IN_PROGRESS: '#2563EB', 
+  COMPLETED: '#28A745', 
+  REJECTED: '#DC3545', 
+  VERIFIED: '#00B4D8', 
+  ASSIGNED: '#7C3AED', 
+  REMOVED: "#DC3545", 
 };
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(Math.max(v, min), max);
 }
 
-/** Status-colored round pin (avoids Leaflet's broken default asset path). */
+
 function markerIcon(color: string, selected: boolean): L.DivIcon {
   const size = selected ? 20 : 16;
   return L.divIcon({
@@ -60,7 +56,7 @@ function markerIcon(color: string, selected: boolean): L.DivIcon {
   });
 }
 
-/** Pulsing accent pin for the searched location. */
+
 const focusIcon = L.divIcon({
   className: '',
   html: '<div style="position:relative;width:18px;height:18px;">' +
@@ -70,7 +66,7 @@ const focusIcon = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-/** Hands the live Leaflet map instance to the page (for flyTo / coordinate math). */
+
 function MapController({ onReady }: { onReady: (map: L.Map) => void }) {
   const map = useMap();
   const fired = useRef(false);
@@ -94,7 +90,7 @@ function centeredRect(container: { width: number; height: number }, wFrac: numbe
   };
 }
 
-/** Severity dot + label (matches the dashboard's chip). */
+
 function SeverityChip({ severity }: { severity: Severity }) {
   const meta = SEVERITY_META[severity];
   return (
@@ -105,7 +101,7 @@ function SeverityChip({ severity }: { severity: Severity }) {
   );
 }
 
-/** Status badge coloured by the map-page palette. */
+
 function MapStatusBadge({ status }: { status: ReportStatus }) {
   const color = MAP_STATUS_COLORS[status];
   return (
@@ -160,11 +156,10 @@ export function PublicMap() {
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  /** Tracks the location the current selection box belongs to (so resize
-      events never reset a box the user has already positioned). */
+  
   const focusInitRef = useRef<{ lat: number; lng: number } | null>(null);
 
-  // --- Data ---
+  
   const myReports = useQuery({
     queryKey: ['user', 'reports', 'map'],
     queryFn: () => reportsApi.mine({ limit: MAP_LIMIT }),
@@ -186,7 +181,7 @@ export function PublicMap() {
     setMapReady(true);
   }, []);
 
-  // Track the map wrapper size for the selection box.
+  
   useEffect(() => {
     const node = mapRef.current;
     if (!node) return;
@@ -197,8 +192,8 @@ export function PublicMap() {
     return () => ro.disconnect();
   }, []);
 
-  // A fresh default selection box whenever a location is chosen. Guarded so
-  // map-wrapper resize events don't snap an already-positioned box back.
+  
+  
   useEffect(() => {
     if (!focus || !container) return;
     if (focusInitRef.current?.lat === focus.lat && focusInitRef.current?.lng === focus.lng) return;
@@ -206,7 +201,7 @@ export function PublicMap() {
     setBox(centeredRect(container, 0.45, 0.5));
   }, [focus, container]);
 
-  // Smoothly fly to the searched location once the map is ready.
+  
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (map && focus) map.flyTo([focus.lat, focus.lng], 15, { duration: 1.2 });
@@ -230,7 +225,7 @@ export function PublicMap() {
     setHighlightId(report.id);
   }
 
-  /** Capture the selected map area and hand it to the report form. */
+  
   async function handleCapture() {
     const node = mapRef.current;
     if (!node || !box || !focus) {
@@ -266,8 +261,8 @@ export function PublicMap() {
     }
   }
 
-  // Position the camera button next to the box, flipping above it when the box
-  // sits near the bottom edge of the map.
+  
+  
   const cameraPos = useMemo(() => {
     if (!box || !container) return null;
     const gap = 14;
@@ -282,7 +277,7 @@ export function PublicMap() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      {/* Header */}
+      {}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-primary">Hazard map</h1>
@@ -301,7 +296,7 @@ export function PublicMap() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
-        {/* -------- Left: my reports -------- */}
+        {}
         <aside className="order-2 flex max-h-[480px] flex-col gap-4 lg:order-1 lg:max-h-[640px]">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary-light">
@@ -360,10 +355,9 @@ export function PublicMap() {
           </div>
         </aside>
 
-        {/* -------- Right: map -------- */}
+        {}
         <section className="relative order-1 h-[520px] overflow-hidden rounded-card border border-primary/10 bg-primary/5 shadow-card lg:order-2 lg:h-[640px]">
-          {/* Captured node — the map ONLY. Overlays are siblings so they never
-              appear in the screenshot. */}
+          {}
           <div ref={mapRef} className="absolute inset-0">
             <MapContainer center={DEFAULT_CENTER} zoom={12} scrollWheelZoom zoomControl={false} className="z-0 h-full w-full">
               <TileLayer
@@ -399,14 +393,14 @@ export function PublicMap() {
             </MapContainer>
           </div>
 
-          {/* Floating search bar (top centre) */}
+          {}
           <div className="pointer-events-none absolute inset-x-0 top-4 z-40 flex justify-center">
             <div className="pointer-events-auto">
               <SearchBar onSelect={handleSelectPlace} />
             </div>
           </div>
 
-          {/* Nearby count / focus pill (top left) */}
+          {}
           {focus && (
             <div className="pointer-events-none absolute left-4 top-4 z-40">
               <div className="flex items-center gap-2 rounded-full bg-primary/85 px-3 py-1.5 text-xs font-bold text-white shadow-card backdrop-blur">
@@ -421,7 +415,7 @@ export function PublicMap() {
             </div>
           )}
 
-          {/* No potholes found */}
+          {}
           {focus && !publicReports.isFetching && reportsToShow.length === 0 && (
             <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
               <div className="rounded-xl bg-white/95 px-5 py-3 text-center shadow-card">
@@ -431,7 +425,7 @@ export function PublicMap() {
             </div>
           )}
 
-          {/* Legend */}
+          {}
           <div className="pointer-events-none absolute bottom-4 left-4 z-40 rounded-xl bg-white/95 p-3 shadow-card">
             <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary/50">Status</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -444,14 +438,14 @@ export function PublicMap() {
             </div>
           </div>
 
-          {/* Selection box */}
+          {}
           {focus && box && container && (
             <div className="pointer-events-none absolute inset-0 z-30">
               <SelectionBox rect={box} container={container} onChange={setBox} />
             </div>
           )}
 
-          {/* Camera button — floats next to the selection box */}
+          {}
           {cameraPos && focus && (
             <button
               onClick={() => void handleCapture()}
@@ -465,7 +459,7 @@ export function PublicMap() {
             </button>
           )}
 
-          {/* Capturing overlay */}
+          {}
           {capturing && (
             <div className="absolute inset-0 z-[60] grid place-items-center bg-primary/30 backdrop-blur-[2px]">
               <div className="flex items-center gap-3 rounded-xl bg-white px-5 py-3 shadow-card-hover">

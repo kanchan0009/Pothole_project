@@ -143,7 +143,7 @@ export function UserDashboard() {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
       
-      {/* Hero Section */}
+      {}
       <DashboardHero
         title={`Welcome back, ${user?.name?.split(' ')[0] ?? 'Citizen'}`}
         subtitle="Track your reports and follow their repair progress."
@@ -213,7 +213,7 @@ export function UserDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main List */}
+        {}
         <div className="lg:col-span-2">
           <Card className="flex h-full flex-col p-0">
             <div className="border-b border-primary/5 p-5">
@@ -309,7 +309,7 @@ export function UserDashboard() {
               )}
             </div>
 
-            {/* Pagination */}
+            {}
             <div className="flex items-center justify-between border-t border-primary/5 px-5 py-4">
               <p className="text-[11px] font-semibold text-primary/40">
                 {isLoading
@@ -333,7 +333,7 @@ export function UserDashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions Side Column */}
+        {}
         <div>
           <Card className="p-6">
             <h3 className="mb-6 text-base font-extrabold text-primary">Quick Actions</h3>

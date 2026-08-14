@@ -50,7 +50,7 @@ export function AdminMessages() {
         </p>
       </div>
 
-      {/* Search */}
+      {}
       <Card className="mb-5 p-4">
         <div className="relative max-w-md">
           <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-primary/35" />
@@ -63,7 +63,7 @@ export function AdminMessages() {
         </div>
       </Card>
 
-      {/* List */}
+      {}
       <Card className="overflow-hidden">
         {isFetching && !data ? (
           <div className="px-5 py-4">
@@ -87,7 +87,7 @@ export function AdminMessages() {
           <p className="py-12 text-center text-sm text-primary/50">No messages match these filters.</p>
         )}
 
-        {/* Pagination */}
+        {}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/5 px-5 py-4">
           <p className="text-xs text-primary/50">
             {data ? `${data.pagination.total} total messages` : 'Loading…'}

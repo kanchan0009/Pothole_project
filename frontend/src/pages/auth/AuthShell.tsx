@@ -8,11 +8,11 @@ interface AuthShellProps {
   children: ReactNode;
 }
 
-/** Split-screen wrapper for all auth pages (brand panel + form). */
+
 export function AuthShell({ title, subtitle, children }: AuthShellProps) {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
-      {/* Brand panel */}
+      {}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-white lg:flex">
         <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
@@ -36,7 +36,7 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
         <p className="relative text-xs text-white/40">© {new Date().getFullYear()} RoadGuard</p>
       </div>
 
-      {/* Form panel */}
+      {}
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-8 flex items-center gap-2 text-xl font-extrabold text-primary lg:hidden">

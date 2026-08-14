@@ -13,7 +13,7 @@ interface FieldProps {
   children: ReactNode;
 }
 
-/** Labeled form field with hint + validation message (uses the .input-field styles). */
+
 export function Field({ label, error, hint, children }: FieldProps) {
   return (
     <div>
@@ -25,11 +25,7 @@ export function Field({ label, error, hint, children }: FieldProps) {
   );
 }
 
-/**
- * Field inputs are forwardRef so react-hook-form's `register()` ref callback
- * reaches the DOM node. Without it the ref is dropped and RHF never registers
- * the field — validation silently skips and submits send empty values.
- */
+
 export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function TextInput({ className = '', ...props }, ref) {
     return <input ref={ref} className={`input-field ${className}`} {...props} />;

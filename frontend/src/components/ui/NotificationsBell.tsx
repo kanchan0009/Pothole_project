@@ -9,10 +9,7 @@ import { formatTime } from "../../lib/format";
 import { useAuth } from "../../features/auth/auth-context";
 import { useToast } from "./Toast";
 
-/**
- * Bell + dropdown notification feed, shared by the admin and citizen shells.
- * Uses the authenticated /notifications endpoints (mark-read on click, mark-all).
- */
+
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const toast = useToast();
@@ -20,14 +17,14 @@ export function NotificationsBell() {
   const { data, refetch } = useQuery({
     queryKey: ["notifications"],
     queryFn: notificationsApi.list,
-    // Keep the unread badge fresh in the background without a manual reopen.
+    
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
 
   const unread = data?.unreadCount ?? 0;
-  // Only unread items belong in the feed — dismissed/read ones stay in the DB
-  // but must not reappear after a refresh.
+  
+  
   const visibleNotifications =
     data?.notifications.filter((n) => !n.isRead) ?? [];
 

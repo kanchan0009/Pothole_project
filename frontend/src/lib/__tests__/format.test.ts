@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatCoords, formatDate, formatDateTime, formatHours, formatTime, timeAgo } from '../format';
 
-/** Build an ISO string from LOCAL parts so wall-clock assertions hold in any timezone. */
+
 function iso(y: number, m: number, d: number, hh = 0, mm = 0): string {
   return new Date(y, m - 1, d, hh, mm).toISOString();
 }

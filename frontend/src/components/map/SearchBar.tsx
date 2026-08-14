@@ -16,14 +16,10 @@ interface SearchBarProps {
 
 const POPULAR = KATHMANDU_PLACES.slice(0, 6);
 
-/** Debounce for the async Nominatim lookup. */
+
 const REMOTE_DEBOUNCE_MS = 350;
 
-/**
- * Floating map search with autocomplete. Combines the curated Kathmandu list
- * (instant) with a debounced Nominatim lookup, and supports arrow-key
- * navigation + Enter selection.
- */
+
 export function SearchBar({ onSelect }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -34,12 +30,12 @@ export function SearchBar({ onSelect }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Keep the dropdown in sync with the query (debounced remote lookup).
+  
   useEffect(() => {
     const q = query.trim();
     if (!open) return;
 
-    // Local matches are instant; remote is debounced and cancellable.
+    
     const local = searchLocalPlaces(q);
     setSuggestions(local);
     setActive(0);
@@ -67,7 +63,7 @@ export function SearchBar({ onSelect }: SearchBarProps) {
     };
   }, [query, open]);
 
-  // Close on outside click / Escape.
+  
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
@@ -88,7 +84,7 @@ export function SearchBar({ onSelect }: SearchBarProps) {
   function onKeyDown(e: React.KeyboardEvent) {
     if (!open || suggestions.length === 0) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
-        setOpen(true); // opening an empty/filtered dropdown
+        setOpen(true); 
         setSuggestions(
           query.trim()
             ? searchLocalPlaces(query)

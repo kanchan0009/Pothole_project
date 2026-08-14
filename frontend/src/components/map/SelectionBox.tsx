@@ -13,7 +13,7 @@ interface SelectionBoxProps {
   onChange: (rect: BoxRect) => void;
 }
 
-/** Drag handle metadata: position + cursor. */
+
 const HANDLES: { id: Handle; className: string; cursor: string }[] = [
   { id: 'nw', className: 'left-0 top-0 -translate-x-1/2 -translate-y-1/2', cursor: 'nwse-resize' },
   { id: 'n', className: 'left-1/2 top-0 -translate-x-1/2 -translate-y-1/2', cursor: 'ns-resize' },
@@ -25,21 +25,16 @@ const HANDLES: { id: Handle; className: string; cursor: string }[] = [
   { id: 'w', className: 'left-0 top-1/2 -translate-x-1/2 -translate-y-1/2', cursor: 'ew-resize' },
 ];
 
-/**
- * Movable + resizable rectangular selection overlay for map capture. Uses
- * pointer events with window-level listeners so the drag keeps tracking even
- * when the cursor leaves the box. Rendered ABOVE the map but BELOW the search
- * bar / camera button (z-30 vs z-40).
- */
+
 export function SelectionBox({ rect, container, onChange }: SelectionBoxProps) {
-  // startRect is captured at pointerdown so mid-drag renders stay consistent.
+  
   const dragRef = useRef<{ handle: Handle; startX: number; startY: number; startRect: BoxRect } | null>(null);
 
   function clamp(v: number, min: number, max: number): number {
     return Math.min(Math.max(v, min), max);
   }
 
-  /** Resize a rectangle from a fixed handle; returns the new rect un-clamped. */
+  
   function resize(start: BoxRect, dx: number, dy: number, handle: Handle): BoxRect {
     let { x, y, width, height } = start;
     const left = handle.includes('w');
@@ -83,7 +78,7 @@ export function SelectionBox({ rect, container, onChange }: SelectionBoxProps) {
         };
       } else {
         next = resize(drag.startRect, dx, dy, drag.handle);
-        // Keep the box fully inside the container.
+        
         next.x = clamp(next.x, 0, Math.max(0, maxW - next.width));
         next.y = clamp(next.y, 0, Math.max(0, maxH - next.height));
       }
@@ -118,7 +113,7 @@ export function SelectionBox({ rect, container, onChange }: SelectionBoxProps) {
         className="pointer-events-none absolute inset-0 rounded-md border-2 border-dashed border-accent bg-accent/10"
         style={{ boxShadow: '0 0 0 9999px rgba(11,31,58,0.15)' }}
       />
-      {/* Move hint — only visible on the body so it is not on the handles. */}
+      {}
       <span className="pointer-events-none absolute left-2 top-2 rounded bg-primary/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
         Capture area
       </span>

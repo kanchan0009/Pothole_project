@@ -2,7 +2,7 @@ import html2canvas from 'html2canvas';
 import { reverseGeocode, type ReverseGeocodeResult } from './geocode';
 import type { MapCaptureDraft } from '../types';
 
-/** Selection box in CSS pixels relative to the map wrapper. */
+
 export interface BoxRect {
   x: number;
   y: number;
@@ -11,27 +11,18 @@ export interface BoxRect {
 }
 
 export interface MapCaptureResult {
-  /** PNG file ready to attach to the report form. */
+  
   file: File;
-  /** Persistable data URL of the same image (survives a redirect / refresh). */
+  
   previewUrl: string;
-  /** Center of the captured region (lat/lng). */
+  
   latitude: number;
   longitude: number;
   address: ReverseGeocodeResult;
   timestamp: string;
 }
 
-/**
- * Renders the Leaflet DOM to a canvas with html2canvas, crops it to the
- * selection box, draws a dashed border around the captured region, and returns
- * the cropped image plus the region's center coordinates.
- *
- * `mapNode` must be the element that wraps ONLY the map (not the overlay UI),
- * so the search bar / selection box / camera button never appear in the shot.
- * `centerToLatLng` converts a container pixel point (the box centre) to lat/lng
- * using the live Leaflet map instance.
- */
+
 export async function captureMapArea(
   mapNode: HTMLElement,
   rect: BoxRect,
@@ -45,7 +36,7 @@ export async function captureMapArea(
     logging: false,
   });
 
-  // Crop rect, clamped to the canvas bounds.
+  
   const cw = canvas.width;
   const ch = canvas.height;
   const x = Math.max(0, Math.min(cw - 1, Math.round(rect.x * scale)));
@@ -60,7 +51,7 @@ export async function captureMapArea(
   if (!ctx) throw new Error('Canvas is not supported in this browser');
   ctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
 
-  // Dashed accent border so the shot visibly matches the selected box.
+  
   const line = Math.max(2, Math.round(3 * scale));
   ctx.strokeStyle = '#00B4D8';
   ctx.lineWidth = line;
@@ -75,7 +66,7 @@ export async function captureMapArea(
     try {
       address = await reverseGeocode(center.lat, center.lng);
     } catch {
-      /* manual entry is the fallback on the report form */
+      
     }
   }
   return {
@@ -88,13 +79,13 @@ export async function captureMapArea(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Geo helpers
-// ---------------------------------------------------------------------------
+
+
+
 
 const EARTH_RADIUS_M = 6371000;
 
-/** Haversine distance between two points, in metres. */
+
 export function haversineDistance(
   lat1: number,
   lng1: number,
@@ -110,7 +101,7 @@ export function haversineDistance(
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a));
 }
 
-/** Reports within `radiusM` metres of `center`. */
+
 export function nearbyFilter<T extends { latitude?: number | null; longitude?: number | null }>(
   reports: T[],
   center: { lat: number; lng: number },
@@ -122,18 +113,18 @@ export function nearbyFilter<T extends { latitude?: number | null; longitude?: n
   });
 }
 
-// ---------------------------------------------------------------------------
-// Draft persistence
-// ---------------------------------------------------------------------------
 
-/** sessionStorage key the map page uses to hand the capture to /report. */
+
+
+
+
 export const MAP_CAPTURE_STORAGE_KEY = 'rg_map_capture';
 
 export function saveMapCaptureDraft(draft: MapCaptureDraft): void {
   try {
     sessionStorage.setItem(MAP_CAPTURE_STORAGE_KEY, JSON.stringify(draft));
   } catch {
-    /* quota exceeded — the immediate navigation still works */
+    
   }
 }
 
@@ -151,9 +142,9 @@ export function clearMapCaptureDraft(): void {
   sessionStorage.removeItem(MAP_CAPTURE_STORAGE_KEY);
 }
 
-// ---------------------------------------------------------------------------
-// Blob / data-URL conversion
-// ---------------------------------------------------------------------------
+
+
+
 
 function canvasToPngFile(canvas: HTMLCanvasElement): Promise<File> {
   return new Promise((resolve, reject) => {

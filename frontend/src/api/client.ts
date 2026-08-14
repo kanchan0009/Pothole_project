@@ -1,21 +1,16 @@
 import axios from 'axios';
 
-/** Base API URL. Dev uses the Vite proxy (/api → http://localhost:5000). */
+
 export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-/** LocalStorage keys for the auth session. */
+
 export const STORAGE_KEYS = {
   access: 'rg_access',
   refresh: 'rg_refresh',
   user: 'rg_user',
 } as const;
 
-/**
- * Shared Axios instance.
- * - Attaches the access token to every request.
- * - Unwraps the API's `{ success, data }` envelope (so consumers get `data`).
- * - On 401, attempts a single refresh-token rotation before giving up.
- */
+
 export const apiClient = axios.create({ baseURL: API_URL });
 
 apiClient.interceptors.request.use((config) => {
@@ -48,7 +43,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 apiClient.interceptors.response.use(
   (response) => {
-    // Unwrap { success, data } envelope for JSON responses.
+    
     if (response.data && typeof response.data === 'object' && 'success' in response.data) {
       return response.data.data as typeof response.data;
     }
@@ -68,13 +63,13 @@ apiClient.interceptors.response.use(
     }
     const message =
       error.response?.data?.error?.message || error.message || 'Unexpected error. Please try again.';
-    // Attach the structured error envelope so callers can react to codes
-    // like DUPLICATE_REPORT without re-parsing the original Axios error.
+    
+    
     const rejected = new Error(message);
     (rejected as Error & { responseData?: unknown }).responseData = error.response?.data?.error;
     return Promise.reject(rejected);
   }
 );
 
-/** Convenience: typed wrapper for endpoints that return `{ data }`. */
+
 export const unwrap = <T,>(promise: Promise<unknown>): Promise<T> => promise as Promise<T>;

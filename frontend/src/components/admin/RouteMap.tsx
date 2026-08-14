@@ -5,10 +5,10 @@ import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet
 import type { ReportRoute } from '../../types';
 import { Card } from '../ui/Card';
 
-/** Kathmandu valley — default view when there is no route to fit. */
+
 const DEFAULT_CENTER: [number, number] = [27.7172, 85.324];
 
-/** Red dashed pin — the pothole / report. */
+
 const potholeIcon = L.divIcon({
   className: 'rg-map-pin',
   html: '<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#DC3545;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.45);"></div>',
@@ -16,7 +16,7 @@ const potholeIcon = L.divIcon({
   iconAnchor: [10, 20],
 });
 
-/** Blue crew marker — the maintenance team. */
+
 const teamIcon = L.divIcon({
   className: 'rg-map-team',
   html: '<div style="width:20px;height:20px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.45);"></div>',
@@ -36,11 +36,7 @@ function FitBounds({ points }: { points: [number, number][] }) {
   return null;
 }
 
-/**
- * The Dijkstra route from the maintenance crew to the pothole, drawn on a
- * Leaflet map with the road polyline between two markers. Unreachable routes
- * (off-network, no coords, no workers) render a graceful empty state instead.
- */
+
 export function RouteMap({ route }: { route: ReportRoute | null }) {
   const plan = route?.route;
 
@@ -65,7 +61,7 @@ export function RouteMap({ route }: { route: ReportRoute | null }) {
 
   const path = plan.path;
   const teamPos: [number, number] = [route.team.lat, route.team.lng];
-  // The polyline runs team → report, so the report is its last point.
+  
   const reportPos: [number, number] = path[path.length - 1]!;
 
   return (

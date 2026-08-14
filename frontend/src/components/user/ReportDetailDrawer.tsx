@@ -19,7 +19,7 @@ interface ReportDetailDrawerProps {
   onClose: () => void;
 }
 
-/** Citizen read-only detail view — photos, status timeline, receipt download. */
+
 export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -50,7 +50,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
     }
   }
 
-  /** Owner-only — permanently deletes this report from the system. */
+  
   async function handleRemove() {
     if (!report) return;
     setRemoving(true);
@@ -79,7 +79,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-background shadow-2xl"
           >
-            {/* Header */}
+            {}
             <div className="flex items-center justify-between gap-3 border-b border-white/60 bg-white/80 px-5 py-4 backdrop-blur">
               <div>
                 <h2 className="text-lg font-extrabold text-primary">{report ? reportRef(report.id) : 'Report'}</h2>
@@ -100,7 +100,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
               </button>
             </div>
 
-            {/* Body */}
+            {}
             <div className="flex-1 overflow-y-auto px-5 py-5">
               {isLoading || !report ? (
                 <div className="space-y-4">
@@ -110,7 +110,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Images */}
+                  {}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <figure>
                       <img src={report.imageUrl} alt="Reported" className="h-44 w-full rounded-xl object-cover" />
@@ -134,7 +134,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     )}
                   </div>
 
-                  {/* Duplicate flag */}
+                  {}
                   {report.duplicate && (
                     <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
                       <p className="flex items-center gap-2 text-sm font-bold text-warning">
@@ -146,7 +146,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </div>
                   )}
 
-                  {/* Rejection reason */}
+                  {}
                   {report.status === 'REJECTED' && report.rejectionReason && (
                     <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
                       <p className="flex items-center gap-2 text-sm font-bold text-danger">
@@ -156,7 +156,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </div>
                   )}
 
-                  {/* Details */}
+                  {}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Info label="Title" value={report.title} span />
                     <Info label="Road name" value={report.roadName} />
@@ -175,7 +175,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     <Info label="Description" value={report.description} span />
                   </div>
 
-                  {/* Assignment */}
+                  {}
                   {report.assignments && report.assignments.length > 0 && (
                     <Card className="p-4">
                       <p className="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
@@ -190,7 +190,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </Card>
                   )}
 
-                  {/* Timeline */}
+                  {}
                   {report.history && report.history.length > 0 && (
                     <Card className="p-4">
                       <p className="mb-4 text-sm font-bold text-primary">Status timeline</p>
@@ -212,7 +212,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </Card>
                   )}
 
-                  {/* Receipt download */}
+                  {}
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white p-4">
                     <div>
                       <p className="text-sm font-bold text-primary">Official report receipt</p>
@@ -225,7 +225,7 @@ export function ReportDetailDrawer({ reportId, onClose }: ReportDetailDrawerProp
                     </Button>
                   </div>
 
-                  {/* Permanent delete (owner only) */}
+                  {}
                   {isOwner && (
                     <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
                       {!confirmRemove ? (

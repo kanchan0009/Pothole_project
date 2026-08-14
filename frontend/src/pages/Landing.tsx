@@ -325,7 +325,7 @@ export function Landing() {
                   Real roads repaired. Real results.
                 </h2>
                 <p className="mt-4 max-w-xl text-base leading-8 text-slate-600">
-                  Since launching in 2022, RoadGuard has processed over 14,200
+                  RoadGuard has processed over 14,200
                   resident reports and helped authorities repair the worst
                   hazards faster than traditional 311 channels.
                 </p>

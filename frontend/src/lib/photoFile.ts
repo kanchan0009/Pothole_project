@@ -1,6 +1,6 @@
 const ACCEPTED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-/** MIME types the report form accepts after normalisation. */
+
 export function isAcceptedPhotoMime(type: string): boolean {
   return ACCEPTED.has(normalizeMime(type));
 }
@@ -20,13 +20,10 @@ function mimeFromName(name: string): string {
   return '';
 }
 
-/**
- * Device cameras often return `""`, `image/jpg`, or `application/octet-stream`.
- * Normalise so upload and native-camera paths match the upload-file pipeline.
- */
+
 export function normalizePhotoFile(file: File): File | null {
   let type = normalizeMime(file.type) || mimeFromName(file.name);
-  // Native camera captures frequently omit type and extension.
+  
   if (!type) type = 'image/jpeg';
 
   if (!ACCEPTED.has(type)) return null;
@@ -36,7 +33,7 @@ export function normalizePhotoFile(file: File): File | null {
   return new File([file], name.includes('.') ? name : `${name}.jpg`, { type });
 }
 
-/** JPEG file from a canvas — with toDataURL fallback for iOS Safari. */
+
 export async function canvasToJpegFile(
   canvas: HTMLCanvasElement,
   name = 'camera-capture.jpg',

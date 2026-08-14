@@ -11,7 +11,7 @@ export interface ReverseGeocodeResult {
   landmark?: string;
 }
 
-/** Promisified navigator.geolocation with a hard timeout. */
+
 export function getCurrentPosition(): Promise<LatLng> {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
@@ -27,10 +27,7 @@ export function getCurrentPosition(): Promise<LatLng> {
   });
 }
 
-/**
- * Reverse-geocodes a point via OpenStreetMap's public Nominatim API.
- * Returns empty fields on any failure (manual entry is the fallback).
- */
+
 export async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 6000);

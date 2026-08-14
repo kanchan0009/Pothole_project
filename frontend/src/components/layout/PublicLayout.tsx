@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
-/** Wraps public pages with the sticky navbar + footer. */
+
 export function PublicLayout() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';

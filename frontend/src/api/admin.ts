@@ -37,7 +37,7 @@ export type AdminExportFormat = 'csv' | 'xlsx' | 'pdf';
 
 export type StatisticsPeriod = 'day' | 'week' | 'month' | 'year';
 
-/** Admin API surface — mirrors backend/src/routes/admin.routes.ts. */
+
 export const adminApi = {
   dashboard: () => apiClient.get('/admin/dashboard').then((r) => r as unknown as DashboardData),
 
@@ -50,14 +50,14 @@ export const adminApi = {
   reportDetail: (id: number) =>
     apiClient.get(`/admin/reports/${id}`).then((r) => r as unknown as { report: ReportDetail }),
 
-  /** Multipart status transition — status, remarks, optional image file. */
+  
   updateStatus: (id: number, form: FormData) =>
     apiClient.put(`/admin/reports/${id}/status`, form).then((r) => r as unknown as { report: ReportDetail }),
 
   assign: (id: number, body: { workerId?: number; assignedTo?: string }) =>
     apiClient.post(`/admin/reports/${id}/assign`, body).then((r) => r as unknown as { report: ReportDetail }),
 
-  /** Verify-AI — confirm or reject the detection; rejection also rejects the report. */
+  
   verifyAi: (id: number, body: { approved: boolean; reason?: string }) =>
     apiClient.post(`/admin/reports/${id}/ai-verify`, body).then((r) => r as unknown as { report: ReportDetail }),
 
@@ -79,15 +79,15 @@ export const adminApi = {
 
   workers: () => apiClient.get('/admin/workers').then((r) => r as unknown as { workers: Worker[] }),
 
-  /** Max-heap priority queue (ordered, highest first). */
+  
   priorityQueue: () =>
     apiClient.get('/admin/priority-queue').then((r) => r as unknown as PriorityQueueSnapshot),
 
-  /** Dispatch the peak of the heap — assign the nearest crew and move to ASSIGNED. */
+  
   dispatchNext: () =>
     apiClient.post('/admin/priority-queue/process-next').then((r) => r as unknown as DispatchResult),
 
-  /** Dijkstra route from the crew to a report (recomputed on every call). */
+  
   reportRoute: (id: number, params?: { workerId?: number }) =>
     apiClient
       .get(`/admin/reports/${id}/route`, { params })
@@ -96,11 +96,7 @@ export const adminApi = {
   logs: (limit = 20) =>
     apiClient.get('/admin/logs', { params: { limit } }).then((r) => r as unknown as { logs: AdminLog[] }),
 
-  /**
-   * Streams an export through the browser. The plain <a href> cannot carry the
-   * Authorization header, so we fetch a blob with the shared axios client
-   * (which attaches the token) and trigger a download from an object URL.
-   */
+  
   downloadExport: async (format: AdminExportFormat, params: AdminReportParams = {}) => {
     const data = (await apiClient.get(`/admin/export/${format}`, { params, responseType: 'blob' })) as unknown as Blob;
     if (!(data instanceof Blob)) return;
@@ -115,7 +111,7 @@ export const adminApi = {
   },
 };
 
-/** Notifications feed — used by the admin topbar and dashboards. */
+
 export const notificationsApi = {
   list: () => apiClient.get('/notifications').then((r) => r as unknown as NotificationList),
   markRead: (id: number) => apiClient.put(`/notifications/${id}/read`).then((r) => r as unknown as NotificationList),

@@ -11,7 +11,7 @@ function FullPageLoader() {
   );
 }
 
-/** Requires an authenticated session (any role). */
+
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
@@ -23,7 +23,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Requires an ADMIN session — used for /admin routes. */
+
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
@@ -38,7 +38,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Blocks authenticated users from guest-only pages (login/register). */
+
 export function RequireGuest({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <FullPageLoader />;

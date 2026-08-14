@@ -13,7 +13,7 @@ import {
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { SEVERITY_META, SEVERITY_ORDER } from '../../lib/constants';
 
-// Register Chart.js pieces once (tree-shaken to what these charts need).
+
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend, Filler);
 
 const FONT = 'Inter, system-ui, -apple-system, sans-serif';
@@ -38,7 +38,7 @@ const BASE_OPTIONS = {
   },
 };
 
-/** Report volume over time — line chart with a soft area fill. */
+
 export function TrendLine({ labels, data, height = 260 }: { labels: string[]; data: number[]; height?: number }) {
   return (
     <div style={{ height }}>
@@ -70,7 +70,7 @@ export function TrendLine({ labels, data, height = 260 }: { labels: string[]; da
   );
 }
 
-/** Severity distribution — doughnut with spec severity colors. */
+
 export function SeverityDoughnut({ data, height = 260 }: { data: Record<string, number>; height?: number }) {
   return (
     <div style={{ height }}>
@@ -108,7 +108,7 @@ export function SeverityDoughnut({ data, height = 260 }: { data: Record<string, 
   );
 }
 
-/** Most-complained roads — horizontal bar chart. */
+
 export function TopRoadsBar({ labels, data, height = 260 }: { labels: string[]; data: number[]; height?: number }) {
   return (
     <div style={{ height }}>

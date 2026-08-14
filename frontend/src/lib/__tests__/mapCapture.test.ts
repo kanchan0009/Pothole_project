@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { haversineDistance, nearbyFilter } from '../mapCapture';
 import { mergePlaces, searchLocalPlaces } from '../mapPlaces';
 
-// Kathmandu → Patan is ~4.7 km as the crow flies.
+
 const KATHMANDU = { lat: 27.7172, lng: 85.324 };
 const PATAN = { lat: 27.6747, lng: 85.3247 };
 
@@ -20,9 +20,9 @@ describe('haversineDistance', () => {
 
 describe('nearbyFilter', () => {
   const reports = [
-    { id: 1, latitude: KATHMANDU.lat, longitude: KATHMANDU.lng }, // ~0 m
-    { id: 2, latitude: PATAN.lat, longitude: PATAN.lng }, // ~4.7 km
-    { id: 3, latitude: null, longitude: null }, // no coordinates
+    { id: 1, latitude: KATHMANDU.lat, longitude: KATHMANDU.lng }, 
+    { id: 2, latitude: PATAN.lat, longitude: PATAN.lng }, 
+    { id: 3, latitude: null, longitude: null }, 
   ];
 
   it('keeps only reports within the radius and drops coordinate-less rows', () => {

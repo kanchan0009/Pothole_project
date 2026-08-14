@@ -5,13 +5,13 @@ import type { User } from '../../types';
 
 interface AuthContextValue {
   user: User | null;
-  isLoading: boolean; // restoring the session on first load
+  isLoading: boolean; 
   login: (input: LoginInput) => Promise<User>;
   googleLogin: (token: string) => Promise<User>;
   adminLogin: (input: { email: string; password: string }) => Promise<User>;
   register: (input: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
-  /** Replaces the in-memory + stored user (after a profile save). */
+  
   updateStoredUser: (u: User) => void;
 }
 
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(readStoredUser);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore the session: validate the stored token via /auth/me.
+  
   useEffect(() => {
     let active = true;
     const token = localStorage.getItem(STORAGE_KEYS.access);
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (!active) return;
-        // Interceptor already tried a refresh; session is gone.
+        
         setUser(null);
         localStorage.removeItem(STORAGE_KEYS.access);
         localStorage.removeItem(STORAGE_KEYS.refresh);
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout(refreshToken);
     } catch {
-      // best-effort server revoke
+      
     }
     localStorage.removeItem(STORAGE_KEYS.access);
     localStorage.removeItem(STORAGE_KEYS.refresh);
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, isLoading, login, googleLogin, adminLogin, register, logout, updateStoredUser }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
     [user, isLoading]
   );
 

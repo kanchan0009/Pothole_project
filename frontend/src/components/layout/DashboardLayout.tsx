@@ -98,7 +98,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** Persistent dashboard shell — sidebar + topbar + routed content. */
+
 export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
@@ -106,12 +106,12 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop sidebar */}
+      {}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
         <SidebarContent />
       </aside>
 
-      {/* Mobile drawer */}
+      {}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -129,7 +129,7 @@ export function DashboardLayout() {
         )}
       </AnimatePresence>
 
-      {/* Main column */}
+      {}
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 border-b border-white/40 bg-white/70 backdrop-blur-lg">
           <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
@@ -165,7 +165,7 @@ export function DashboardLayout() {
         </main>
       </div>
 
-      {/* Close button inside the mobile drawer (top-right) */}
+      {}
       {mobileOpen && (
         <button
           onClick={() => setMobileOpen(false)}

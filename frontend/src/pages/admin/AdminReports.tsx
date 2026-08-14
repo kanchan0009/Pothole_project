@@ -111,13 +111,13 @@ export function AdminReports() {
     }
   };
 
-  // Debounce the search box so the table doesn't refetch per keystroke.
+  
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => window.clearTimeout(t);
   }, [search]);
 
-  // Any filter change starts back at page 1.
+  
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, status, severity, municipality, ward, sort]);
@@ -201,7 +201,7 @@ export function AdminReports() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
+      {}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-primary">
@@ -227,7 +227,7 @@ export function AdminReports() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <Card className="mb-5 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative sm:col-span-2">
@@ -315,12 +315,12 @@ export function AdminReports() {
         </div>
       </Card>
 
-      {/* Max-heap priority queue — highest-priority pothole first */}
+      {}
       <div className="mb-5">
         <PriorityQueuePanel />
       </div>
 
-      {/* Table */}
+      {}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left">
@@ -369,7 +369,7 @@ export function AdminReports() {
           </p>
         )}
 
-        {/* Pagination */}
+        {}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/5 px-5 py-4">
           <p className="text-xs text-primary/50">
             {data ? (

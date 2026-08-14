@@ -11,7 +11,7 @@ export type ReportStatus =
   | 'REJECTED'
   | 'REMOVED';
 
-/** Normalized detection box — 0..1 coordinates as fractions of the image. */
+
 export interface DetectionBox {
   x: number;
   y: number;
@@ -19,17 +19,17 @@ export interface DetectionBox {
   height: number;
 }
 
-/** Result of the step-2 AI gate on the report form. */
+
 export interface DetectionResult {
   isPothole: boolean;
   confidence: number;
   boundingBox: DetectionBox | null;
   previewUrl: string | null;
-  /** CNN severity classification (authoritative) — set only when a pothole. */
+  
   severity?: Severity;
-  /** Softmax probabilities over [NONE, LOW, MEDIUM, HIGH, CRITICAL]. */
+  
   classProbs?: number[];
-  /** Server explanation when no pothole was found. */
+  
   message?: string;
 }
 
@@ -65,13 +65,13 @@ export interface Report {
   detectedImageUrl?: string | null;
   aiVerified?: boolean | null;
   aiRejectedReason?: string | null;
-  /** CNN severity classification (authoritative over `severity`). */
+  
   aiSeverity?: Severity | null;
-  /** Softmax probabilities over [NONE, LOW, MEDIUM, HIGH, CRITICAL]. */
+  
   aiClassProbs?: number[] | null;
-  /** Severity the citizen picked on the form (CNN output wins on conflict). */
+  
   suggestedSeverity?: Severity | null;
-  /** Duplicate confirmations — feed the max-heap priority score. */
+  
   confirmations?: number;
   completionImageUrl?: string | null;
   rejectionReason?: string | null;
@@ -104,7 +104,7 @@ export interface ReportLocation {
   longitude: number;
 }
 
-/** Status-history entry as returned by the report-detail payload (raw prisma shape). */
+
 export interface DetailHistoryEntry {
   id: number;
   reportId: number;
@@ -128,11 +128,7 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-/**
- * Draft handed from the map page's "capture area" flow to the report form.
- * `previewUrl` is a persistable data URL so the draft survives a login
- * redirect or a hard refresh (sessionStorage cannot hold a File).
- */
+
 export interface MapCaptureDraft {
   previewUrl: string;
   latitude: number;
@@ -202,7 +198,7 @@ export interface Worker {
   longitude: number | null;
 }
 
-/** One row of the max-heap priority queue (root = highest priority). */
+
 export interface PriorityQueueItem {
   rank: number;
   ref: string;
@@ -224,13 +220,13 @@ export interface PriorityQueueSnapshot {
   peek: PriorityQueueItem | null;
 }
 
-/** Dijkstra route plan from the maintenance crew to a pothole. */
+
 export interface RoutePlan {
   reachable: boolean;
   reason?: 'off-network' | 'no-route' | 'no-coordinates' | 'no-workers';
   distanceKm?: number;
   etaMinutes?: number;
-  /** Ordered [lat, lng] polyline along the road network. */
+  
   path?: [number, number][];
   offNetworkM?: number;
 }

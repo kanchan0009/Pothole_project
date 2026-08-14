@@ -4,7 +4,7 @@ import { router } from './router';
 import { AuthProvider } from './features/auth/auth-context';
 import { ToastProvider } from './components/ui/Toast';
 
-/** Shared React Query client for all server state. */
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

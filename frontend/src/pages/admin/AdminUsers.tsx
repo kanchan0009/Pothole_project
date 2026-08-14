@@ -97,7 +97,7 @@ export function AdminUsers() {
   const totalPages = data?.pagination.totalPages ?? 1;
 
   function handleDeactivate(user: AdminUser) {
-    // First click arms the confirm; second click on the same row performs it.
+    
     if (confirm?.id !== user.id) {
       setConfirm({ id: user.id });
       return;
@@ -117,7 +117,7 @@ export function AdminUsers() {
         </p>
       </div>
 
-      {/* Filters */}
+      {}
       <Card className="mb-5 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="relative sm:col-span-2">
@@ -161,7 +161,7 @@ export function AdminUsers() {
         </div>
       </Card>
 
-      {/* Table */}
+      {}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left">
@@ -214,7 +214,7 @@ export function AdminUsers() {
           <p className="py-12 text-center text-sm text-primary/50">No users match these filters.</p>
         )}
 
-        {/* Pagination */}
+        {}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/5 px-5 py-4">
           <p className="text-xs text-primary/50">
             {data ? `${data.pagination.total} total users` : 'Loading…'}
@@ -250,7 +250,7 @@ function UserRow({ user, arming, busy, onDeactivate, onWorker, onRole, onSaveCoo
   const iconBtn =
     'grid h-8 w-8 place-items-center rounded-lg border border-primary/10 text-sm text-primary/55 transition hover:border-accent hover:text-accent disabled:opacity-50';
 
-  // Worker coordinate editor — saving re-plans the Dijkstra route to this crew.
+  
   const [lat, setLat] = useState(user.latitude != null ? String(user.latitude) : '');
   const [lng, setLng] = useState(user.longitude != null ? String(user.longitude) : '');
 
@@ -258,7 +258,7 @@ function UserRow({ user, arming, busy, onDeactivate, onWorker, onRole, onSaveCoo
     const la = Number(lat);
     const ln = Number(lng);
     if (Number.isNaN(la) || Number.isNaN(ln) || la < -90 || la > 90 || ln < -180 || ln > 180) {
-      return; // invalid input — ignore; the inputs stay for correction
+      return; 
     }
     onSaveCoords(la, ln);
   }

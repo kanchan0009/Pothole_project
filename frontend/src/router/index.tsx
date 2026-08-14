@@ -20,9 +20,7 @@ import { AdminMessages } from '../pages/admin/AdminMessages';
 import { NewReport } from '../pages/report/NewReport';
 import { RequireAdmin, RequireAuth, RequireGuest } from './guards';
 
-/**
- * Application routes.
- */
+
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,

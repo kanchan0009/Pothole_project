@@ -107,10 +107,10 @@ export function NewReport() {
   const [created, setCreated] = useState<Report | null>(null);
   const [confirmRemoveSuccess, setConfirmRemoveSuccess] = useState(false);
   const [removingSuccess, setRemovingSuccess] = useState(false);
-  /** 'map' when the report photo/location came from the map page's capture. */
+  
   const [source, setSource] = useState<"manual" | "map">("manual");
 
-  // Autocomplete (typeahead) state for road/place search
+  
   const [roadQuery, setRoadQuery] = useState<string>(
     getValues("roadName") ?? "",
   );
@@ -120,17 +120,17 @@ export function NewReport() {
   const searchAbortRef = useRef<AbortController | null>(null);
 
   const [overrideAi, setOverrideAi] = useState(false);
-  /** Ignores stale /api/reports/detect responses when the photo changes quickly (e.g. camera after upload). */
+  
   const detectSeqRef = useRef(0);
 
-  // Consume a capture handed over by the map page. Stored in sessionStorage so
-  // it survives a login redirect; cleared once applied;
+  
+  
   useEffect(() => {
     const draft = readMapCaptureDraft();
     if (!draft) return;
     clearMapCaptureDraft();
     void applyMapDraft(draft);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   function applyPhotoFile(file: File) {
@@ -169,7 +169,7 @@ export function NewReport() {
     uploadInputRef.current?.click();
   }
 
-  /** Opens the device camera for a live preview (preferred on mobile + desktop). */
+  
   async function startCamera() {
     setCameraError(null);
     detectSeqRef.current += 1;
@@ -256,7 +256,7 @@ export function NewReport() {
     });
   }
 
-  // Pipe the MediaStream into the <video> element once the preview mounts.
+  
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !cameraStream) return;
@@ -277,7 +277,7 @@ export function NewReport() {
     };
   }, [cameraStream]);
 
-  /** Pre-fills the form from a map-page capture — the user only adds details. */
+  
   async function applyMapDraft(draft: MapCaptureDraft) {
     try {
       const file = await dataUrlToFile(draft.previewUrl, "map-capture.png");
@@ -305,7 +305,7 @@ export function NewReport() {
     setValue("landmark", "");
   }
 
-  /** Step-2 AI gate — server-side detection; submission is blocked without a hit. */
+  
   async function runDetection(file: File) {
     const seq = detectSeqRef.current;
     setDetecting(true);
@@ -341,14 +341,14 @@ export function NewReport() {
     } finally {
       setGeocoding(false);
     }
-    // Proactive duplicate check so the reporter can decide before submitting.
+    
     try {
       const dup = await reportsApi.checkDuplicate(ll.latitude, ll.longitude);
       setDuplicateWarn(
         dup.duplicate && dup.nearbyReport ? dup.nearbyReport : null,
       );
     } catch {
-      /* non-blocking */
+      
     }
   }
 
