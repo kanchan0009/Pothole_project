@@ -61,11 +61,11 @@ const SEVERITY_OPTIONS: Array<{
   value: FormValues["severity"];
   label: string;
 }> = [
-  { value: "LOW", label: "Low — minor surface damage" },
-  { value: "MEDIUM", label: "Medium — noticeable pothole" },
-  { value: "HIGH", label: "High — large, risky pothole" },
-  { value: "CRITICAL", label: "Critical — hazard / blocks traffic" },
-];
+    { value: "LOW", label: "Low — minor surface damage" },
+    { value: "MEDIUM", label: "Medium — noticeable pothole" },
+    { value: "HIGH", label: "High — large, risky pothole" },
+    { value: "CRITICAL", label: "Critical — hazard / blocks traffic" },
+  ];
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -856,10 +856,10 @@ export function NewReport() {
                                 setValue(
                                   "ward",
                                   addr.city_district ||
-                                    addr.suburb ||
-                                    addr.neighbourhood ||
-                                    addr.postcode ||
-                                    "",
+                                  addr.suburb ||
+                                  addr.neighbourhood ||
+                                  addr.postcode ||
+                                  "",
                                   { shouldDirty: true },
                                 );
                                 setValue(
@@ -972,7 +972,7 @@ type Step = 1 | 2 | 3 | 4;
 function ReportStepper({
   current,
   completed,
-  
+
 }: {
   current: Step;
   completed: Set<number>;

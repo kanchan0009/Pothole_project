@@ -31,7 +31,7 @@ export function DashboardHero({ title, subtitle, dateStr, stats, onRefresh, onEx
 
       <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-3">
+          <div className="mb-2 flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">{title}</h1>
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-md">
               {dateStr}
@@ -61,7 +61,7 @@ export function DashboardHero({ title, subtitle, dateStr, stats, onRefresh, onEx
         </div>
       </div>
 
-      <div className="relative z-10 mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat, i) => (
           <div key={i} className="rounded-xl bg-white/10 p-4 backdrop-blur-md border border-white/10">
             <div className="mb-2 flex items-center gap-2 text-white/70">

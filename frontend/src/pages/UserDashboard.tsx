@@ -143,8 +143,7 @@ export function UserDashboard() {
         ]}
       />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         <SparklineCard
           label="Total Reports"
           value={s ? s.total : 0}
@@ -230,27 +229,37 @@ export function UserDashboard() {
                     <button
                       key={r.id}
                       onClick={() => setSelectedId(r.id)}
-                      className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.02]"
+                      className="flex flex-col sm:flex-row w-full sm:items-center gap-3 sm:gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.02]"
                     >
-                      <img src={r.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-sm" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-bold text-primary">{r.title}</p>
-                          {r.duplicate && (
-                            <Badge tone="warning">
-                              <FaFlag /> Duplicate
-                            </Badge>
-                          )}
+                      <div className="flex w-full items-center gap-3 sm:gap-4">
+                        <img src={r.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-sm" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-bold text-primary">{r.title}</p>
+                            {r.duplicate && (
+                              <Badge tone="warning">
+                                <FaFlag /> Duplicate
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="mt-0.5 truncate text-[11px] text-primary/50">
+                            {r.roadName} · {r.municipality} · {timeAgo(r.createdAt)}
+                          </p>
                         </div>
-                        <p className="mt-0.5 truncate text-[11px] text-primary/50">
-                          {r.roadName} · {r.municipality} · {timeAgo(r.createdAt)}
-                        </p>
                       </div>
-                      <div className="hidden sm:block">
-                        <SeverityChip severity={r.severity} />
+                      
+                      <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-3 pl-15 sm:pl-0">
+                        <div className="sm:hidden text-xs text-primary/50">
+                           {timeAgo(r.createdAt)}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="hidden sm:block">
+                            <SeverityChip severity={r.severity} />
+                          </div>
+                          <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
+                          <FaChevronRight className="shrink-0 text-primary/20" />
+                        </div>
                       </div>
-                      <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
-                      <FaChevronRight className="shrink-0 text-primary/20" />
                     </button>
                   ))}
                 </div>

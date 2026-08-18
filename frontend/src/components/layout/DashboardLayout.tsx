@@ -9,6 +9,7 @@ import {
   FaTachometerAlt,
   FaTimes,
   FaUsers,
+  FaArrowLeft,
 } from 'react-icons/fa';
 import { useAuth } from '../../features/auth/auth-context';
 import { useToast } from '../ui/Toast';
@@ -101,6 +102,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,9 +141,16 @@ export function DashboardLayout() {
               >
                 <FaTachometerAlt className="rotate-90" />
               </button>
-              <div>
-                <p className="text-sm font-bold text-primary">Welcome back, {user?.name?.split(' ')[0]}</p>
-                <p className="hidden text-xs text-primary/50 sm:block">Municipal operations console</p>
+              <button
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+                className="grid h-10 w-10 place-items-center rounded-lg bg-white/70 text-primary-light transition hover:bg-white"
+              >
+                <FaArrowLeft />
+              </button>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-primary truncate max-w-[140px] sm:max-w-none">Welcome back, {user?.name?.split(' ')[0]}</p>
+                <p className="hidden text-xs text-primary/50 sm:block truncate">Municipal operations console</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -151,7 +160,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-8 mx-4">
+        <main className="mx-auto max-w-7xl px-4 py-8">
           <Outlet />
         </main>
       </div>
