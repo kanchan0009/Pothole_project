@@ -1,10 +1,11 @@
 import sharp from 'sharp';
 import type { DetectionBox, DetectionResult, PotholeDetector } from './detector.js';
 
-const GRID = 32; 
-const DARK_RATIO = 0.75; 
-const MIN_CLUSTER_RATIO = 0.01; 
-const NEAR_BLACK_MEDIAN = 40; 
+const GRID = 32; // downscale to GRID×GRID grayscale for the analysis
+const DARK_RATIO = 0.75; // a cell counts as dark when luminance < median × DARK_RATIO
+const MIN_CLUSTER_RATIO = 0.01; // the dark patch must cover ≥1% of the frame
+const NEAR_BLACK_MEDIAN = 40; // frames this dark have no readable road baseline
+
 
 
 export const heuristicDetector: PotholeDetector = {
@@ -12,7 +13,7 @@ export const heuristicDetector: PotholeDetector = {
     const grid = await toGrayGrid(imageBuffer);
     const median = medianValue(grid);
 
-    
+    // A frame this dark carries no usable road baseline — treat as unreadable.
     if (median < NEAR_BLACK_MEDIAN) {
       return { isPothole: false, confidence: 0.05, boundingBox: null };
     }
@@ -25,17 +26,17 @@ export const heuristicDetector: PotholeDetector = {
     const ratio = cluster.length / grid.length;
 
     if (ratio < MIN_CLUSTER_RATIO) {
-      
+      // Close but not quite — scale the near-miss into a low confidence.
       return { isPothole: false, confidence: 0.05 + Math.min(0.4, ratio * 10), boundingBox: null };
     }
 
-    
+    // Contrast: how much darker the patch is than the road baseline (0..~1).
     let clusterSum = 0;
     for (const idx of cluster) clusterSum += grid[idx] ?? 0;
     const clusterMean = clusterSum / cluster.length;
     const darkness = Math.min(1, Math.max(0, 1 - clusterMean / median));
 
-    
+    // Size: saturate at ~2.5% frame coverage so one patch cannot overshoot.
     const sizeScore = Math.min(1, ratio * 40);
 
     const confidence = Math.min(0.99, Math.max(0.5, 0.35 + 0.3 * darkness + 0.35 * sizeScore));
@@ -44,11 +45,11 @@ export const heuristicDetector: PotholeDetector = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-
-
-
-
+/** Downscales to a GRID×GRID grayscale luminance map (stretch-fit → linear mapping). */
 async function toGrayGrid(buffer: Buffer): Promise<Uint8Array> {
   const { data, info } = await sharp(buffer)
     .greyscale()
@@ -64,7 +65,7 @@ function medianValue(values: Uint8Array): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 }
 
-
+/** Largest 4-connected cluster of set cells (flood fill), as a list of indices. */
 function largestCluster(mask: Uint8Array): number[] {
   const visited = new Uint8Array(mask.length);
   const stack: number[] = [];
@@ -97,7 +98,7 @@ function largestCluster(mask: Uint8Array): number[] {
   return best;
 }
 
-
+/** Normalized bounding rectangle of the cluster cells. */
 function clusterBox(cells: number[]): DetectionBox {
   let minRow = Infinity;
   let maxRow = -1;

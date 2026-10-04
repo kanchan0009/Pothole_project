@@ -17,7 +17,7 @@ import { loadCnnWeights } from './weights.js';
 const POTHOLES = [1, 2, 3, 4];
 const CONFIDENCE_THRESHOLD = 0.5;
 const NONE_MARGIN = 0.08;
-
+/** Hard reject only when the network is clearly saying "no pothole". */
 const HARD_NONE_PROB = 0.55;
 
 const NO_POTHOLE_MESSAGE =
@@ -90,7 +90,7 @@ function maxPotholeProb(probs: ArrayLike<number>): number {
   return POTHOLES.reduce((m, c) => Math.max(m, probs[c] ?? 0), 0);
 }
 
-
+/** Shared verdict — exported for unit tests. */
 export function evaluateCnnVerdict(
   probs: ArrayLike<number>,
   predictedClass: number,
@@ -125,17 +125,17 @@ export function evaluateCnnVerdict(
 
   const strongStructure = isStrongPotholeStructure(structure);
 
-  
+  // CNN hit — geometry must confirm a dark hole on asphalt (blocks faces / indoor objects).
   if (cnnPothole && structure.ok && !isPortraitScene(scene)) {
     return { isPothole: true, confidence: winnerProb, severityClass: predictedClass };
   }
 
-  
+  // High-confidence CNN + strong pothole geometry on a road scene.
   if (cnnPothole && winnerProb >= 0.62 && strongStructure && !isPortraitScene(scene)) {
     return { isPothole: true, confidence: winnerProb, severityClass: predictedClass };
   }
 
-  
+  // Geometry-led accept — still requires road scene and no portrait tones.
   if (
     strongStructure &&
     predictedClass !== 0 &&

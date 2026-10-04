@@ -55,14 +55,6 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-      {
-        path: '/report',
-        element: (
-          <RequireAuth>
-            <NewReport />
-          </RequireAuth>
-        ),
-      },
     ],
   },
   {

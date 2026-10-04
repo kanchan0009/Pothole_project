@@ -40,5 +40,9 @@
     "@prisma/engines@6.19.3": true,
     "sharp@0.33.5": true,
     "core-js@3.50.0": true
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.2"
   }
 }
